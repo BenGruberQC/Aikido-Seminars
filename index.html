@@ -108,6 +108,11 @@
       <option value="ALL">Tous les mois</option>
     </select>
 
+    <!-- Filtre par intervenant -->
+    <select id="filter-sensei">
+      <option value="ALL">Tous les intervenants</option>
+    </select>
+
     <!-- Filtre par ville -->
     <select id="filter-city">
       <option value="ALL">Toutes les villes</option>
@@ -158,22 +163,32 @@
 
     function populateDropdowns(items) {
       const monthSelect = document.getElementById('filter-month');
+      const senseiSelect = document.getElementById('filter-sensei');
       const citySelect = document.getElementById('filter-city');
       const affilSelect = document.getElementById('filter-affiliation');
 
       const currentMonth = monthSelect.value;
+      const currentSensei = senseiSelect.value;
       const currentCity = citySelect.value;
       const currentAffil = affilSelect.value;
 
       const months = new Set();
+      const senseis = new Set();
       const cities = new Set();
       const affiliations = new Set();
 
       items.forEach(item => {
         const ym = getYearMonthKey(item['Date Début']);
         if (ym) months.add(ym);
-        if (item['Ville'] && item['Ville'].trim() !== '') cities.add(item['Ville'].trim());
-        if (item['Courant / Affiliation'] && item['Courant / Affiliation'].trim() !== '') affiliations.add(item['Courant / Affiliation'].trim());
+        if (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].trim() !== '') {
+          senseis.add(item['Intervenant (Sensei)'].trim());
+        }
+        if (item['Ville'] && item['Ville'].trim() !== '') {
+          cities.add(item['Ville'].trim());
+        }
+        if (item['Courant / Affiliation'] && item['Courant / Affiliation'].trim() !== '') {
+          affiliations.add(item['Courant / Affiliation'].trim());
+        }
       });
 
       // Remplir le menu des mois (trié chronologiquement)
@@ -183,6 +198,15 @@
         opt.value = ym;
         opt.textContent = formatYearMonthLabel(ym);
         monthSelect.appendChild(opt);
+      });
+
+      // Remplir le menu des intervenants par ordre alphabétique
+      senseiSelect.innerHTML = '<option value="ALL">Tous les intervenants</option>';
+      Array.from(senseis).sort((a, b) => a.localeCompare(b, 'fr')).forEach(sensei => {
+        const opt = document.createElement('option');
+        opt.value = sensei;
+        opt.textContent = sensei;
+        senseiSelect.appendChild(opt);
       });
 
       // Remplir le menu des villes par ordre alphabétique
@@ -204,6 +228,7 @@
       });
 
       if (Array.from(monthSelect.options).some(o => o.value === currentMonth)) monthSelect.value = currentMonth;
+      if (Array.from(senseiSelect.options).some(o => o.value === currentSensei)) senseiSelect.value = currentSensei;
       if (Array.from(citySelect.options).some(o => o.value === currentCity)) citySelect.value = currentCity;
       if (Array.from(affilSelect.options).some(o => o.value === currentAffil)) affilSelect.value = currentAffil;
     }
@@ -243,7 +268,7 @@
           card.innerHTML = `
             <span class="badge">${item['Courant / Affiliation'] || 'Aïkido'}</span>
             <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
-            <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)']}</strong> (${item['Titre / Grade'] || ''})</div>
+            <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
             <div class="card-meta">📅 ${item['Date Début']} au ${item['Date Fin']}</div>
             <div class="card-meta">📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})</div>
             <div class="card-price">💰 ${item['Tarif Complet'] || 'Tarif à venir'}</div>
@@ -266,6 +291,7 @@
 
     function applyFilters() {
       const month = document.getElementById('filter-month').value;
+      const sensei = document.getElementById('filter-sensei').value;
       const city = document.getElementById('filter-city').value;
       const affil = document.getElementById('filter-affiliation').value;
 
@@ -273,9 +299,10 @@
         const matchStatus = (item['Statut'] || '').trim().toLowerCase() === 'publié';
         const ym = getYearMonthKey(item['Date Début']);
         const matchMonth = month === 'ALL' || ym === month;
+        const matchSensei = sensei === 'ALL' || (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].includes(sensei));
         const matchCity = city === 'ALL' || (item['Ville'] || '').trim().toLowerCase() === city.toLowerCase();
         const matchAffil = affil === 'ALL' || (item['Courant / Affiliation'] || '').trim().toLowerCase() === affil.toLowerCase();
-        return matchStatus && matchMonth && matchCity && matchAffil;
+        return matchStatus && matchMonth && matchSensei && matchCity && matchAffil;
       });
 
       // Tri chronologique des séminaires filtrés par Date Début
@@ -285,6 +312,7 @@
     }
 
     document.getElementById('filter-month').addEventListener('change', applyFilters);
+    document.getElementById('filter-sensei').addEventListener('change', applyFilters);
     document.getElementById('filter-city').addEventListener('change', applyFilters);
     document.getElementById('filter-affiliation').addEventListener('change', applyFilters);
 
