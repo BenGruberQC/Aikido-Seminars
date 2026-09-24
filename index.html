@@ -55,7 +55,7 @@
     }
     .header-credit strong { color: #f1f5f9; }
 
-    /* Barre de commandes et filtres */
+    /* Barre de filtres et d'actions */
     #filter-bar {
       background: #fff;
       padding: 10px 20px;
@@ -75,8 +75,32 @@
       background: #fff;
     }
 
-    .view-toggles {
+    .action-group {
       margin-left: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-submit {
+      padding: 6px 14px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: #eff6ff;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-submit:hover {
+      background: #dbeafe;
+    }
+
+    .view-toggles {
       display: flex;
       gap: 6px;
     }
@@ -97,7 +121,56 @@
       border-color: var(--accent);
     }
 
-    /* Vues */
+    /* Modal de proposition */
+    #modal-proposer {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+    .modal-box {
+      background: #ffffff;
+      width: 90%;
+      max-width: 480px;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    .option-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      background: #f8fafc;
+      transition: all 0.2s;
+    }
+    .option-card:hover {
+      border-color: var(--accent);
+      background: #eff6ff;
+      transform: translateY(-1px);
+    }
+
+    /* Conteneurs principaux */
     #main-content {
       flex: 1;
       position: relative;
@@ -128,7 +201,7 @@
       overflow-y: auto;
     }
 
-    /* Cartes séminaires */
+    /* Fiches d'événements */
     .card {
       background: #fff;
       border: 1px solid var(--border);
@@ -163,16 +236,17 @@
       #map-view { flex-direction: column-reverse; }
       #sidebar { width: 100%; height: 45%; }
       #map { height: 55%; }
-      .view-toggles { margin-left: 0; width: 100%; }
+      .action-group { margin-left: 0; width: 100%; justify-content: space-between; }
+      .view-toggles { flex: 1; }
       .toggle-btn { flex: 1; text-align: center; }
     }
   </style>
 </head>
 <body>
 
+  <!-- En-tête -->
   <header>
     <div class="header-brand">
-      <!-- Emblème officiel vectoriel (autonome sans fichier image externe) -->
       <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 4px 10px; border-radius: 6px;">
         <svg width="38" height="38" viewBox="0 0 100 100" style="display: block;">
           <circle cx="50" cy="50" r="48" fill="#e11d48"/>
@@ -199,6 +273,38 @@
     </div>
   </header>
 
+  <!-- Fenêtre Modale de soumission -->
+  <div id="modal-proposer">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('modal-proposer').style.display='none'">&times;</button>
+      <h2 style="font-size: 1.15rem; color: var(--primary); margin-bottom: 6px;">Proposer un séminaire</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
+        Sélectionnez le mode de transmission qui vous convient :
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Option 1 : Formulaire en ligne -->
+        <a class="option-card" href="https://forms.gle/Fv8C4q4dTvhDTQuF7" target="_blank" onclick="document.getElementById('modal-proposer').style.display='none'">
+          <span style="font-size: 1.6rem;">📝</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Remplir le formulaire en ligne</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Méthode recommandée (traitement accéléré)</div>
+          </div>
+        </a>
+
+        <!-- Option 2 : Courriel avec pièces jointes -->
+        <a class="option-card" href="mailto:bgruberca@gmail.com?subject=Nouveau%20s%C3%A9minaire%20A%C3%AFkido%20-%20Affiche&body=Bonjour,%0D%0A%0D%0AVeuillez%20trouver%20en%20pi%C3%A8ce%20jointe%20l'affiche%20du%20stage%20%C3%A0%20ajouter%20au%20registre.%0D%0A%0D%0AD%C3%A9tails%20compl%C3%A9mentaires%20:%0D%0A-%20Dojo%20h%C3%B4te%20:%0D%0A-%20Ville%20:%0D%0A-%20Dates%20:%0D%0A-%20Lien%20web%20/page%20:%20" onclick="document.getElementById('modal-proposer').style.display='none'">
+          <span style="font-size: 1.6rem;">✉️</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Transmettre votre flyer PDF ou JPG à bgruberca@gmail.com</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de navigation et filtres -->
   <div id="filter-bar">
     <label><strong>Filtrer :</strong></label>
     <select id="filter-month"><option value="ALL">Tous les mois</option></select>
@@ -206,14 +312,21 @@
     <select id="filter-city"><option value="ALL">Toutes les villes</option></select>
     <select id="filter-affiliation"><option value="ALL">Toutes affiliations</option></select>
 
-    <div class="view-toggles">
-      <button id="btn-map" class="toggle-btn active">🗺️ Carte</button>
-      <button id="btn-calendar" class="toggle-btn">📅 Calendrier</button>
+    <div class="action-group">
+      <button class="btn-submit" onclick="document.getElementById('modal-proposer').style.display='flex'">
+        ➕ Proposer un séminaire
+      </button>
+
+      <div class="view-toggles">
+        <button id="btn-map" class="toggle-btn active">🗺️ Carte</button>
+        <button id="btn-calendar" class="toggle-btn">📅 Calendrier</button>
+      </div>
     </div>
   </div>
 
+  <!-- Zone de contenu -->
   <div id="main-content">
-    <!-- Vue 1 : Carte & Volet latéral -->
+    <!-- Vue Carte -->
     <div id="map-view">
       <div id="map"></div>
       <div id="sidebar">
@@ -222,7 +335,7 @@
       </div>
     </div>
 
-    <!-- Vue 2 : Calendrier Mensuel -->
+    <!-- Vue Calendrier -->
     <div id="calendar-view">
       <div id="calendar"></div>
     </div>
@@ -232,7 +345,7 @@
   <script>
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
 
-    // Initialisation Carte
+    // Configuration de la carte Leaflet
     const map = L.map('map').setView([45.5125, -73.5807], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -434,6 +547,7 @@
       renderView(filtered);
     }
 
+    // Gestion du basculement Carte / Calendrier
     const btnMap = document.getElementById('btn-map');
     const btnCalendar = document.getElementById('btn-calendar');
     const mapView = document.getElementById('map-view');
@@ -464,6 +578,7 @@
     document.getElementById('filter-city').addEventListener('change', applyFilters);
     document.getElementById('filter-affiliation').addEventListener('change', applyFilters);
 
+    // Chargement du fichier CSV Google Sheets
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
       download: true,
       header: true,
