@@ -54,6 +54,7 @@
       border-radius: 6px;
       font-size: 0.85rem;
       outline: none;
+      background: #fff;
     }
 
     #container { display: flex; flex: 1; overflow: hidden; position: relative; }
@@ -97,25 +98,19 @@
 
   <header>
     <h1>Séminaires d'Aïkido</h1>
-    <span>Axe Québec – Montréal – Ottawa – Toronto</span>
+    <span>Carte & Calendrier des Stages</span>
   </header>
 
   <div id="filter-bar">
     <label for="filter-city"><strong>Filtrer :</strong></label>
+    <!-- Les options de villes se remplissent automatiquement -->
     <select id="filter-city">
       <option value="ALL">Toutes les villes</option>
-      <option value="Montréal">Montréal</option>
-      <option value="Québec">Québec</option>
-      <option value="Ottawa">Ottawa</option>
-      <option value="Toronto">Toronto</option>
-      <option value="Kingston">Kingston</option>
     </select>
 
+    <!-- Les options d'affiliations se remplissent automatiquement -->
     <select id="filter-affiliation">
       <option value="ALL">Toutes affiliations</option>
-      <option value="Aikikai / USAF">Aikikai / USAF</option>
-      <option value="CAF">CAF</option>
-      <option value="Kishinkai">Kishinkai</option>
     </select>
   </div>
 
@@ -129,10 +124,10 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // URL CSV générée via "Fichier > Partager > Publier sur le web" de votre Google Sheet
+    // Votre URL CSV Google Sheets
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
 
-    // Initialisation de la carte Leaflet (centrée par défaut sur Montréal)
+    // Initialisation de la carte Leaflet
     const map = L.map('map').setView([45.5125, -73.5807], 11);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -142,6 +137,53 @@
 
     let allSeminars = [];
     let markersLayer = L.layerGroup().addTo(map);
+
+    // Fonction qui extrait les valeurs uniques et peuple dynamiquement les menus déroulants
+    function populateDropdowns(items) {
+      const citySelect = document.getElementById('filter-city');
+      const affilSelect = document.getElementById('filter-affiliation');
+
+      const currentCity = citySelect.value;
+      const currentAffil = affilSelect.value;
+
+      const cities = new Set();
+      const affiliations = new Set();
+
+      items.forEach(item => {
+        if (item['Ville'] && item['Ville'].trim() !== '') {
+          cities.add(item['Ville'].trim());
+        }
+        if (item['Courant / Affiliation'] && item['Courant / Affiliation'].trim() !== '') {
+          affiliations.add(item['Courant / Affiliation'].trim());
+        }
+      });
+
+      // Remplissage dynamique des villes par ordre alphabétique
+      citySelect.innerHTML = '<option value="ALL">Toutes les villes</option>';
+      Array.from(cities).sort((a, b) => a.localeCompare(b, 'fr')).forEach(city => {
+        const opt = document.createElement('option');
+        opt.value = city;
+        opt.textContent = city;
+        citySelect.appendChild(opt);
+      });
+
+      // Remplissage dynamique des affiliations par ordre alphabétique
+      affilSelect.innerHTML = '<option value="ALL">Toutes affiliations</option>';
+      Array.from(affiliations).sort((a, b) => a.localeCompare(b, 'fr')).forEach(affil => {
+        const opt = document.createElement('option');
+        opt.value = affil;
+        opt.textContent = affil;
+        affilSelect.appendChild(opt);
+      });
+
+      // Conserver les sélections précédentes si elles existent toujours
+      if (Array.from(citySelect.options).some(o => o.value === currentCity)) {
+        citySelect.value = currentCity;
+      }
+      if (Array.from(affilSelect.options).some(o => o.value === currentAffil)) {
+        affilSelect.value = currentAffil;
+      }
+    }
 
     function renderView(items) {
       markersLayer.clearLayers();
@@ -156,8 +198,11 @@
       const bounds = [];
 
       items.forEach(item => {
-        const lat = parseFloat(item['Latitude']);
-        const lng = parseFloat(item['Longitude']);
+        // Remplacement de la virgule par un point au cas où les coordonnées sont au format européen
+        const rawLat = (item['Latitude'] || '').toString().replace(',', '.');
+        const rawLng = (item['Longitude'] || '').toString().replace(',', '.');
+        const lat = parseFloat(rawLat);
+        const lng = parseFloat(rawLng);
 
         if (!isNaN(lat) && !isNaN(lng)) {
           bounds.push([lat, lng]);
@@ -171,7 +216,7 @@
             ${item['Lien Inscription / Web'] ? `<a href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent); font-weight:600;">Lien Inscription</a>` : ''}
           `);
 
-          // Carte latérale
+          // Fiche latérale
           const card = document.createElement('div');
           card.className = 'card';
           card.innerHTML = `
@@ -179,13 +224,13 @@
             <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
             <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)']}</strong> (${item['Titre / Grade'] || ''})</div>
             <div class="card-meta">📅 ${item['Date Début']} au ${item['Date Fin']}</div>
-            <div class="card-meta">📍 ${item['Dojo Hôte']} (${item['Ville']})</div>
+            <div class="card-meta">📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})</div>
             <div class="card-price">💰 ${item['Tarif Complet'] || 'Tarif à venir'}</div>
             ${item['Lien Inscription / Web'] ? `<a class="card-link" href="${item['Lien Inscription / Web']}" target="_blank">Page officielle / Inscription →</a>` : ''}
           `;
 
           card.onclick = () => {
-            map.flyTo([lat, lng], 15);
+            map.flyTo([lat, lng], 14);
             marker.openPopup();
           };
 
@@ -193,7 +238,7 @@
         }
       });
 
-      // Recentre automatiquement la vue sur l'ensemble des points
+      // Recentre automatiquement la vue pour inclure tous les séminaires affichés
       if (bounds.length > 0) {
         map.fitBounds(bounds, { padding: [40, 40] });
       }
@@ -205,8 +250,8 @@
 
       const filtered = allSeminars.filter(item => {
         const matchStatus = (item['Statut'] || '').trim().toLowerCase() === 'publié';
-        const matchCity = city === 'ALL' || (item['Ville'] || '').toLowerCase().includes(city.toLowerCase());
-        const matchAffil = affil === 'ALL' || (item['Courant / Affiliation'] || '').toLowerCase().includes(affil.toLowerCase());
+        const matchCity = city === 'ALL' || (item['Ville'] || '').trim().toLowerCase() === city.toLowerCase();
+        const matchAffil = affil === 'ALL' || (item['Courant / Affiliation'] || '').trim().toLowerCase() === affil.toLowerCase();
         return matchStatus && matchCity && matchAffil;
       });
 
@@ -223,6 +268,9 @@
       skipEmptyLines: true,
       complete: function(results) {
         allSeminars = results.data;
+        // Filtre les séminaires avec statut "Publié" pour générer les options
+        const publishedSeminars = allSeminars.filter(item => (item['Statut'] || '').trim().toLowerCase() === 'publié');
+        populateDropdowns(publishedSeminars);
         applyFilters();
       },
       error: function(err) {
