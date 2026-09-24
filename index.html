@@ -45,13 +45,6 @@
       align-items: center;
       gap: 16px;
     }
-    .header-logo {
-      height: 44px;
-      background: #ffffff;
-      padding: 3px 8px;
-      border-radius: 6px;
-      object-fit: contain;
-    }
     .header-title h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
     .header-title span { font-size: 0.8rem; color: #94a3b8; }
 
@@ -162,7 +155,6 @@
     .card-price { font-size: 0.9rem; font-weight: 600; color: #16a34a; margin-top: 6px; }
     .card-link { display: inline-block; margin-top: 8px; font-size: 0.8rem; color: var(--accent); font-weight: 600; text-decoration: none; }
 
-    /* Modal / Pop-up FullCalendar */
     .fc-event { cursor: pointer; }
 
     @media (max-width: 850px) {
@@ -180,12 +172,27 @@
 
   <header>
     <div class="header-brand">
-      <img class="header-logo" src="https://aikido.ca/wp-content/uploads/2021/04/CAF-Logo-H-Dark-300x75.png" alt="Fédération Canadienne d'Aïkido / Canadian Aikido Federation" />
+      <!-- Emblème officiel vectoriel (autonome sans fichier image externe) -->
+      <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 4px 10px; border-radius: 6px;">
+        <svg width="38" height="38" viewBox="0 0 100 100" style="display: block;">
+          <circle cx="50" cy="50" r="48" fill="#e11d48"/>
+          <path d="M 50 14 L 54 26 L 63 22 L 61 34 L 74 33 L 70 42 L 84 48 L 72 58 L 76 66 L 62 64 L 59 74 L 53 71 L 52 86 L 48 86 L 47 71 L 41 74 L 38 64 L 24 66 L 28 58 L 16 48 L 30 42 L 26 33 L 39 34 L 37 22 L 46 26 Z" fill="#ffffff"/>
+          <text x="50" y="44" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">合</text>
+          <text x="50" y="58" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">氣</text>
+          <text x="50" y="72" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">道</text>
+        </svg>
+        <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.15;">
+          <span style="font-size: 0.78rem; font-weight: 700; color: #0f172a; letter-spacing: -0.2px;">Canadian Aikido Federation</span>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #334155; letter-spacing: -0.2px;">Fédération Canadienne d'Aïkido</span>
+        </div>
+      </div>
+
       <div class="header-title">
         <h1>Séminaires d'Aïkido</h1>
         <span>Portail National & Calendrier des Stages</span>
       </div>
     </div>
+
     <div class="header-credit">
       Développé par <strong>BenGruberQC</strong><br>
       Fédération Canadienne d'Aïkido (CAF / FCA)
@@ -236,7 +243,6 @@
     let markersLayer = L.layerGroup().addTo(map);
     let calendar = null;
 
-    // Utilitaires de dates
     function getYearMonthKey(dateStr) {
       if (!dateStr || dateStr.length < 7) return null;
       return dateStr.substring(0, 7);
@@ -250,7 +256,6 @@
       return label.charAt(0).toUpperCase() + label.slice(1);
     }
 
-    // Gestion de l'affichage Calendrier (FullCalendar)
     function initCalendar() {
       const calendarEl = document.getElementById('calendar');
       calendar = new FullCalendar.Calendar(calendarEl, {
@@ -281,7 +286,6 @@
       calendar.render();
     }
 
-    // Remplissage des listes déroulantes de filtrage
     function populateDropdowns(items) {
       const monthSelect = document.getElementById('filter-month');
       const senseiSelect = document.getElementById('filter-sensei');
@@ -334,17 +338,14 @@
       });
     }
 
-    // Affichage des éléments sur la Carte et dans la Liste
     function renderView(items) {
       markersLayer.clearLayers();
       const listContainer = document.getElementById('seminar-list');
       listContainer.innerHTML = '';
 
-      // Mise à jour des événements dans le calendrier
       if (calendar) {
         calendar.removeAllEvents();
         const events = items.map(item => {
-          // Ajuste la fin pour inclure la journée entière dans FullCalendar
           let endDate = item['Date Fin'];
           if (endDate) {
             let d = new Date(endDate);
@@ -413,7 +414,6 @@
       }
     }
 
-    // Application dynamique des filtres
     function applyFilters() {
       const month = document.getElementById('filter-month').value;
       const sensei = document.getElementById('filter-sensei').value;
@@ -434,7 +434,6 @@
       renderView(filtered);
     }
 
-    // Gestion du basculement Carte / Calendrier
     const btnMap = document.getElementById('btn-map');
     const btnCalendar = document.getElementById('btn-calendar');
     const mapView = document.getElementById('map-view');
@@ -445,7 +444,7 @@
       btnCalendar.classList.remove('active');
       mapView.style.display = 'flex';
       calView.style.display = 'none';
-      map.invalidateSize(); // Recalibre Leaflet lors de la réapparition
+      map.invalidateSize();
     });
 
     btnCalendar.addEventListener('click', () => {
@@ -465,7 +464,6 @@
     document.getElementById('filter-city').addEventListener('change', applyFilters);
     document.getElementById('filter-affiliation').addEventListener('change', applyFilters);
 
-    // Chargement initial du fichier CSV Google Sheets
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
       download: true,
       header: true,
