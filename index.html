@@ -48,6 +48,11 @@
     .header-title h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
     .header-title span { font-size: 0.8rem; color: #94a3b8; }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
     .header-credit {
       text-align: right;
       font-size: 0.8rem;
@@ -55,7 +60,22 @@
     }
     .header-credit strong { color: #f1f5f9; }
 
-    /* Barre de filtres et d'actions */
+    .lang-btn {
+      padding: 5px 10px;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      background: #334155;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .lang-btn:hover {
+      background: #475569;
+    }
+
+    /* Barre de commandes et filtres */
     #filter-bar {
       background: #fff;
       padding: 10px 20px;
@@ -121,7 +141,7 @@
       border-color: var(--accent);
     }
 
-    /* Modal de proposition */
+    /* Fenêtre modale */
     #modal-proposer {
       display: none;
       position: fixed;
@@ -170,7 +190,7 @@
       transform: translateY(-1px);
     }
 
-    /* Conteneurs principaux */
+    /* Vues */
     #main-content {
       flex: 1;
       position: relative;
@@ -201,7 +221,7 @@
       overflow-y: auto;
     }
 
-    /* Fiches d'événements */
+    /* Cartes séminaires */
     .card {
       background: #fff;
       border: 1px solid var(--border);
@@ -231,7 +251,8 @@
     .fc-event { cursor: pointer; }
 
     @media (max-width: 850px) {
-      header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .header-right { width: 100%; justify-content: space-between; }
       .header-credit { text-align: left; }
       #map-view { flex-direction: column-reverse; }
       #sidebar { width: 100%; height: 45%; }
@@ -262,14 +283,17 @@
       </div>
 
       <div class="header-title">
-        <h1>Séminaires d'Aïkido</h1>
-        <span>Portail National & Calendrier des Stages</span>
+        <h1 id="txt-site-title">Séminaires d'Aïkido</h1>
+        <span id="txt-site-sub">Portail National & Calendrier des Stages</span>
       </div>
     </div>
 
-    <div class="header-credit">
-      Développé par <strong>BenGruberQC</strong><br>
-      Fédération Canadienne d'Aïkido (CAF / FCA)
+    <div class="header-right">
+      <div class="header-credit">
+        <span id="txt-credit-dev">Développé par</span> <strong>BenGruberQC</strong><br>
+        Fédération Canadienne d'Aïkido (CAF / FCA)
+      </div>
+      <button id="lang-btn" class="lang-btn" onclick="toggleLanguage()">EN</button>
     </div>
   </header>
 
@@ -277,43 +301,41 @@
   <div id="modal-proposer">
     <div class="modal-box">
       <button class="modal-close" onclick="document.getElementById('modal-proposer').style.display='none'">&times;</button>
-      <h2 style="font-size: 1.15rem; color: var(--primary); margin-bottom: 6px;">Proposer un séminaire</h2>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
+      <h2 id="txt-modal-title" style="font-size: 1.15rem; color: var(--primary); margin-bottom: 6px;">Proposer un séminaire</h2>
+      <p id="txt-modal-desc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
         Sélectionnez le mode de transmission qui vous convient :
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 12px;">
-        <!-- Option 1 : Formulaire en ligne -->
         <a class="option-card" href="https://forms.gle/Fv8C4q4dTvhDTQuF7" target="_blank" onclick="document.getElementById('modal-proposer').style.display='none'">
           <span style="font-size: 1.6rem;">📝</span>
           <div>
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Remplir le formulaire en ligne</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Méthode recommandée (traitement accéléré)</div>
+            <div id="txt-form-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Remplir le formulaire en ligne</div>
+            <div id="txt-form-sub" style="font-size: 0.75rem; color: var(--text-muted);">Méthode recommandée (traitement accéléré)</div>
           </div>
         </a>
 
-        <!-- Option 2 : Courriel avec pièces jointes -->
-        <a class="option-card" href="mailto:bgruberca@gmail.com?subject=Nouveau%20s%C3%A9minaire%20A%C3%AFkido%20-%20Affiche&body=Bonjour,%0D%0A%0D%0AVeuillez%20trouver%20en%20pi%C3%A8ce%20jointe%20l'affiche%20du%20stage%20%C3%A0%20ajouter%20au%20registre.%0D%0A%0D%0AD%C3%A9tails%20compl%C3%A9mentaires%20:%0D%0A-%20Dojo%20h%C3%B4te%20:%0D%0A-%20Ville%20:%0D%0A-%20Dates%20:%0D%0A-%20Lien%20web%20/page%20:%20" onclick="document.getElementById('modal-proposer').style.display='none'">
+        <a id="mail-link" class="option-card" href="mailto:bgruberca@gmail.com?subject=Nouveau%20s%C3%A9minaire%20A%C3%AFkido%20-%20Affiche&body=Bonjour,%0D%0A%0D%0AVeuillez%20trouver%20en%20pi%C3%A8ce%20jointe%20l'affiche%20du%20stage%20%C3%A0%20ajouter%20au%20registre.%0D%0A%0D%0AD%C3%A9tails%20compl%C3%A9mentaires%20:%0D%0A-%20Dojo%20h%C3%B4te%20:%0D%0A-%20Ville%20:%0D%0A-%20Dates%20:%0D%0A-%20Lien%20web%20/page%20:%20" onclick="document.getElementById('modal-proposer').style.display='none'">
           <span style="font-size: 1.6rem;">✉️</span>
           <div>
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Transmettre votre flyer PDF ou JPG à bgruberca@gmail.com</div>
+            <div id="txt-mail-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
+            <div id="txt-mail-sub" style="font-size: 0.75rem; color: var(--text-muted);">Transmettre votre flyer PDF ou JPG à bgruberca@gmail.com</div>
           </div>
         </a>
       </div>
     </div>
   </div>
 
-  <!-- Barre de navigation et filtres -->
+  <!-- Barre de commandes et filtres -->
   <div id="filter-bar">
-    <label><strong>Filtrer :</strong></label>
+    <label><strong id="txt-filter-label">Filtrer :</strong></label>
     <select id="filter-month"><option value="ALL">Tous les mois</option></select>
     <select id="filter-sensei"><option value="ALL">Tous les intervenants</option></select>
     <select id="filter-city"><option value="ALL">Toutes les villes</option></select>
     <select id="filter-affiliation"><option value="ALL">Toutes affiliations</option></select>
 
     <div class="action-group">
-      <button class="btn-submit" onclick="document.getElementById('modal-proposer').style.display='flex'">
+      <button id="btn-submit-action" class="btn-submit" onclick="document.getElementById('modal-proposer').style.display='flex'">
         ➕ Proposer un séminaire
       </button>
 
@@ -330,7 +352,7 @@
     <div id="map-view">
       <div id="map"></div>
       <div id="sidebar">
-        <h2 style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires à venir</h2>
+        <h2 id="txt-sidebar-title" style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires à venir</h2>
         <div id="seminar-list">Chargement des données...</div>
       </div>
     </div>
@@ -345,7 +367,77 @@
   <script>
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
 
-    // Configuration de la carte Leaflet
+    // Dictionnaire bilingue
+    const i18n = {
+      fr: {
+        siteTitle: "Séminaires d'Aïkido",
+        siteSub: "Portail National & Calendrier des Stages",
+        creditDev: "Développé par",
+        filterLabel: "Filtrer :",
+        allMonths: "Tous les mois",
+        allSensei: "Tous les intervenants",
+        allCities: "Toutes les villes",
+        allAffiliations: "Toutes affiliations",
+        btnSubmit: "➕ Proposer un séminaire",
+        btnMap: "🗺️ Carte",
+        btnCal: "📅 Calendrier",
+        sidebarTitle: "Séminaires à venir",
+        noSeminar: "Aucun stage ne correspond aux critères.",
+        loading: "Chargement des données...",
+        modalTitle: "Proposer un séminaire",
+        modalDesc: "Sélectionnez le mode de transmission qui vous convient :",
+        formTitle: "Remplir le formulaire en ligne",
+        formSub: "Méthode recommandée (traitement accéléré)",
+        mailTitle: "Envoyer l'affiche par courriel",
+        mailSub: "Transmettre votre flyer PDF ou JPG à bgruberca@gmail.com",
+        mailSubject: "Nouveau séminaire Aïkido - Affiche",
+        mailBody: "Bonjour,%0D%0A%0D%0AVeuillez trouver en pièce jointe l'affiche du stage à ajouter au registre.%0D%0A%0D%0ADétails complémentaires :%0D%0A- Dojo hôte :%0D%0A- Ville :%0D%0A- Dates :%0D%0A- Lien web /page :%0D%0A",
+        labelFrom: "au",
+        labelFee: "Tarif Complet",
+        feeTBD: "Tarif à venir",
+        labelLink: "Page officielle / Inscription →",
+        calLocale: "fr",
+        calToday: "Aujourd'hui",
+        calMonth: "Mois",
+        calList: "Agenda"
+      },
+      en: {
+        siteTitle: "Aikido Seminars",
+        siteSub: "National Portal & Seminar Calendar",
+        creditDev: "Developed by",
+        filterLabel: "Filter:",
+        allMonths: "All months",
+        allSensei: "All instructors",
+        allCities: "All cities",
+        allAffiliations: "All affiliations",
+        btnSubmit: "➕ Submit a Seminar",
+        btnMap: "🗺️ Map",
+        btnCal: "📅 Calendar",
+        sidebarTitle: "Upcoming Seminars",
+        noSeminar: "No seminars match the selected criteria.",
+        loading: "Loading data...",
+        modalTitle: "Submit a Seminar",
+        modalDesc: "Select your preferred transmission method:",
+        formTitle: "Fill out the online form",
+        formSub: "Recommended method (faster publication)",
+        mailTitle: "Send the poster by email",
+        mailSub: "Send your PDF or JPG flyer to bgruberca@gmail.com",
+        mailSubject: "New Aikido Seminar - Poster",
+        mailBody: "Hello,%0D%0A%0D%0APlease find attached the seminar poster to add to the registry.%0D%0A%0D%0AAdditional details:%0D%0A- Host dojo:%0D%0A- City:%0D%0A- Dates:%0D%0A- Web/registration link:%0D%0A",
+        labelFrom: "to",
+        labelFee: "Full Fee",
+        feeTBD: "Fee TBD",
+        labelLink: "Official Page / Registration →",
+        calLocale: "en",
+        calToday: "Today",
+        calMonth: "Month",
+        calList: "List"
+      }
+    };
+
+    let currentLang = 'fr';
+
+    // Carte Leaflet
     const map = L.map('map').setView([45.5125, -73.5807], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -361,11 +453,11 @@
       return dateStr.substring(0, 7);
     }
 
-    function formatYearMonthLabel(yearMonthStr) {
+    function formatYearMonthLabel(yearMonthStr, lang) {
       const parts = yearMonthStr.split('-');
       if (parts.length < 2) return yearMonthStr;
       const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
-      const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const label = date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' });
       return label.charAt(0).toUpperCase() + label.slice(1);
     }
 
@@ -373,26 +465,27 @@
       const calendarEl = document.getElementById('calendar');
       calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        locale: 'fr',
+        locale: i18n[currentLang].calLocale,
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,listMonth'
         },
         buttonText: {
-          today: "Aujourd'hui",
-          month: "Mois",
-          list: "Agenda"
+          today: i18n[currentLang].calToday,
+          month: i18n[currentLang].calMonth,
+          list: i18n[currentLang].calList
         },
         eventClick: function(info) {
           const item = info.event.extendedProps.rawData;
+          const t = i18n[currentLang];
           alert(
             (item['Titre du séminaire'] || item['Intervenant (Sensei)']) + "\n\n" +
-            "Sensei : " + (item['Intervenant (Sensei)'] || 'N/C') + " (" + (item['Titre / Grade'] || '') + ")\n" +
-            "Dates : Du " + item['Date Début'] + " au " + item['Date Fin'] + "\n" +
-            "Lieu : " + item['Dojo Hôte'] + " - " + item['Ville'] + "\n" +
-            "Tarif : " + (item['Tarif Complet'] || 'À venir') + "\n" +
-            (item['Lien Inscription / Web'] ? "\nLien : " + item['Lien Inscription / Web'] : "")
+            (currentLang === 'fr' ? "Sensei : " : "Instructor: ") + (item['Intervenant (Sensei)'] || 'N/C') + " (" + (item['Titre / Grade'] || '') + ")\n" +
+            "Dates : " + item['Date Début'] + " " + t.labelFrom + " " + item['Date Fin'] + "\n" +
+            (currentLang === 'fr' ? "Lieu : " : "Location: ") + item['Dojo Hôte'] + " - " + item['Ville'] + "\n" +
+            t.labelFee + " : " + (item['Tarif Complet'] || t.feeTBD) + "\n" +
+            (item['Lien Inscription / Web'] ? "\n" + item['Lien Inscription / Web'] : "")
           );
         }
       });
@@ -404,6 +497,11 @@
       const senseiSelect = document.getElementById('filter-sensei');
       const citySelect = document.getElementById('filter-city');
       const affilSelect = document.getElementById('filter-affiliation');
+
+      const savedMonth = monthSelect.value;
+      const savedSensei = senseiSelect.value;
+      const savedCity = citySelect.value;
+      const savedAffil = affilSelect.value;
 
       const months = new Set();
       const senseis = new Set();
@@ -418,43 +516,51 @@
         if (item['Courant / Affiliation'] && item['Courant / Affiliation'].trim() !== '') affiliations.add(item['Courant / Affiliation'].trim());
       });
 
-      monthSelect.innerHTML = '<option value="ALL">Tous les mois</option>';
+      const t = i18n[currentLang];
+
+      monthSelect.innerHTML = `<option value="ALL">${t.allMonths}</option>`;
       Array.from(months).sort().forEach(ym => {
         const opt = document.createElement('option');
         opt.value = ym;
-        opt.textContent = formatYearMonthLabel(ym);
+        opt.textContent = formatYearMonthLabel(ym, currentLang);
         monthSelect.appendChild(opt);
       });
 
-      senseiSelect.innerHTML = '<option value="ALL">Tous les intervenants</option>';
-      Array.from(senseis).sort((a, b) => a.localeCompare(b, 'fr')).forEach(s => {
+      senseiSelect.innerHTML = `<option value="ALL">${t.allSensei}</option>`;
+      Array.from(senseis).sort((a, b) => a.localeCompare(b, currentLang)).forEach(s => {
         const opt = document.createElement('option');
         opt.value = s;
         opt.textContent = s;
         senseiSelect.appendChild(opt);
       });
 
-      citySelect.innerHTML = '<option value="ALL">Toutes les villes</option>';
-      Array.from(cities).sort((a, b) => a.localeCompare(b, 'fr')).forEach(c => {
+      citySelect.innerHTML = `<option value="ALL">${t.allCities}</option>`;
+      Array.from(cities).sort((a, b) => a.localeCompare(b, currentLang)).forEach(c => {
         const opt = document.createElement('option');
         opt.value = c;
         opt.textContent = c;
         citySelect.appendChild(opt);
       });
 
-      affilSelect.innerHTML = '<option value="ALL">Toutes affiliations</option>';
-      Array.from(affiliations).sort((a, b) => a.localeCompare(b, 'fr')).forEach(a => {
+      affilSelect.innerHTML = `<option value="ALL">${t.allAffiliations}</option>`;
+      Array.from(affiliations).sort((a, b) => a.localeCompare(b, currentLang)).forEach(a => {
         const opt = document.createElement('option');
         opt.value = a;
         opt.textContent = a;
         affilSelect.appendChild(opt);
       });
+
+      if (Array.from(monthSelect.options).some(o => o.value === savedMonth)) monthSelect.value = savedMonth;
+      if (Array.from(senseiSelect.options).some(o => o.value === savedSensei)) senseiSelect.value = savedSensei;
+      if (Array.from(citySelect.options).some(o => o.value === savedCity)) citySelect.value = savedCity;
+      if (Array.from(affilSelect.options).some(o => o.value === savedAffil)) affilSelect.value = savedAffil;
     }
 
     function renderView(items) {
       markersLayer.clearLayers();
       const listContainer = document.getElementById('seminar-list');
       listContainer.innerHTML = '';
+      const t = i18n[currentLang];
 
       if (calendar) {
         calendar.removeAllEvents();
@@ -477,7 +583,7 @@
       }
 
       if (items.length === 0) {
-        listContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem;">Aucun stage ne correspond aux critères.</p>';
+        listContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">${t.noSeminar}</p>`;
         return;
       }
 
@@ -495,10 +601,10 @@
           marker.bindPopup(`
             <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
             <em>${item['Titre / Grade'] || ''}</em><br>
-            📅 ${item['Date Début']} au ${item['Date Fin']}<br>
+            📅 ${item['Date Début']} ${t.labelFrom} ${item['Date Fin']}<br>
             📍 ${item['Dojo Hôte']}<br>
-            💰 Complet : ${item['Tarif Complet'] || 'N/C'}<br>
-            ${item['Lien Inscription / Web'] ? `<a href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent); font-weight:600;">Lien Inscription</a>` : ''}
+            💰 ${t.labelFee} : ${item['Tarif Complet'] || 'N/C'}<br>
+            ${item['Lien Inscription / Web'] ? `<a href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent); font-weight:600;">${t.labelLink}</a>` : ''}
           `);
 
           const card = document.createElement('div');
@@ -507,10 +613,10 @@
             <span class="badge">${item['Courant / Affiliation'] || 'Aïkido'}</span>
             <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
             <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
-            <div class="card-meta">📅 ${item['Date Début']} au ${item['Date Fin']}</div>
+            <div class="card-meta">📅 ${item['Date Début']} ${t.labelFrom} ${item['Date Fin']}</div>
             <div class="card-meta">📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})</div>
-            <div class="card-price">💰 ${item['Tarif Complet'] || 'Tarif à venir'}</div>
-            ${item['Lien Inscription / Web'] ? `<a class="card-link" href="${item['Lien Inscription / Web']}" target="_blank">Page officielle / Inscription →</a>` : ''}
+            <div class="card-price">💰 ${item['Tarif Complet'] || t.feeTBD}</div>
+            ${item['Lien Inscription / Web'] ? `<a class="card-link" href="${item['Lien Inscription / Web']}" target="_blank">${t.labelLink}</a>` : ''}
           `;
 
           card.onclick = () => {
@@ -547,7 +653,45 @@
       renderView(filtered);
     }
 
-    // Gestion du basculement Carte / Calendrier
+    // Gestion du bilinguisme
+    function toggleLanguage() {
+      currentLang = currentLang === 'fr' ? 'en' : 'fr';
+      const t = i18n[currentLang];
+
+      document.getElementById('lang-btn').textContent = currentLang === 'fr' ? 'EN' : 'FR';
+      document.getElementById('txt-site-title').textContent = t.siteTitle;
+      document.getElementById('txt-site-sub').textContent = t.siteSub;
+      document.getElementById('txt-credit-dev').textContent = t.creditDev;
+      document.getElementById('txt-filter-label').textContent = t.filterLabel;
+      document.getElementById('btn-submit-action').textContent = t.btnSubmit;
+      document.getElementById('btn-map').textContent = t.btnMap;
+      document.getElementById('btn-calendar').textContent = t.btnCal;
+      document.getElementById('txt-sidebar-title').textContent = t.sidebarTitle;
+
+      document.getElementById('txt-modal-title').textContent = t.modalTitle;
+      document.getElementById('txt-modal-desc').textContent = t.modalDesc;
+      document.getElementById('txt-form-title').textContent = t.formTitle;
+      document.getElementById('txt-form-sub').textContent = t.formSub;
+      document.getElementById('txt-mail-title').textContent = t.mailTitle;
+      document.getElementById('txt-mail-sub').textContent = t.mailSub;
+
+      document.getElementById('mail-link').href = `mailto:bgruberca@gmail.com?subject=${encodeURIComponent(t.mailSubject)}&body=${t.mailBody}`;
+
+      if (calendar) {
+        calendar.setOption('locale', t.calLocale);
+        calendar.setOption('buttonText', {
+          today: t.calToday,
+          month: t.calMonth,
+          list: t.calList
+        });
+      }
+
+      const published = allSeminars.filter(item => (item['Statut'] || '').trim().toLowerCase() === 'publié');
+      populateDropdowns(published);
+      applyFilters();
+    }
+
+    // Basculement Vue Carte / Calendrier
     const btnMap = document.getElementById('btn-map');
     const btnCalendar = document.getElementById('btn-calendar');
     const mapView = document.getElementById('map-view');
@@ -578,7 +722,7 @@
     document.getElementById('filter-city').addEventListener('change', applyFilters);
     document.getElementById('filter-affiliation').addEventListener('change', applyFilters);
 
-    // Chargement du fichier CSV Google Sheets
+    // Chargement CSV
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
       download: true,
       header: true,
@@ -590,7 +734,7 @@
         applyFilters();
       },
       error: function() {
-        document.getElementById('seminar-list').innerHTML = '<p style="color:red;">Erreur de chargement des données.</p>';
+        document.getElementById('seminar-list').innerHTML = `<p style="color:red;">Erreur de chargement des données.</p>`;
       }
     });
   </script>
