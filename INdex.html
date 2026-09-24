@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Séminaires d'Aïkido - Carte & Calendrier</title>
+
+  <!-- Feuille de style Leaflet (OpenStreetMap) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- PapaParse pour lire le CSV Google Sheets -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #1e293b;
+      --accent: #2563eb;
+      --bg: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
+
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
+    header span { font-size: 0.85rem; color: #94a3b8; }
+
+    /* Barre de filtres */
+    #filter-bar {
+      background: #fff;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      z-index: 9;
+    }
+    select, input {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    #container { display: flex; flex: 1; overflow: hidden; position: relative; }
+    #map { flex: 1; height: 100%; z-index: 1; }
+    #sidebar { width: 380px; background: #fff; border-left: 1px solid var(--border); overflow-y: auto; padding: 16px; }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 12px;
+      background: #eff6ff;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .card h3 { font-size: 1rem; color: var(--primary); margin-bottom: 4px; }
+    .card-meta { font-size: 0.85rem; color: var(--text-muted); margin: 3px 0; }
+    .card-price { font-size: 0.9rem; font-weight: 600; color: #16a34a; margin-top: 6px; }
+    .card-link { display: inline-block; margin-top: 8px; font-size: 0.8rem; color: var(--accent); font-weight: 600; text-decoration: none; }
+
+    @media (max-width: 800px) {
+      #container { flex-direction: column-reverse; }
+      #sidebar { width: 100%; height: 45%; }
+      #map { height: 55%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Séminaires d'Aïkido</h1>
+    <span>Axe Québec – Montréal – Ottawa – Toronto</span>
+  </header>
+
+  <div id="filter-bar">
+    <label for="filter-city"><strong>Filtrer :</strong></label>
+    <select id="filter-city">
+      <option value="ALL">Toutes les villes</option>
+      <option value="Montréal">Montréal</option>
+      <option value="Québec">Québec</option>
+      <option value="Ottawa">Ottawa</option>
+      <option value="Toronto">Toronto</option>
+      <option value="Kingston">Kingston</option>
+    </select>
+
+    <select id="filter-affiliation">
+      <option value="ALL">Toutes affiliations</option>
+      <option value="Aikikai / USAF">Aikikai / USAF</option>
+      <option value="CAF">CAF</option>
+      <option value="Kishinkai">Kishinkai</option>
+    </select>
+  </div>
+
+  <div id="container">
+    <div id="map"></div>
+    <div id="sidebar">
+      <h2 style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires à venir</h2>
+      <div id="seminar-list">Chargement des séminaires...</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // URL CSV générée via "Fichier > Partager > Publier sur le web" de votre Google Sheet
+    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
+
+    // Initialisation de la carte Leaflet (centrée par défaut sur Montréal)
+    const map = L.map('map').setView([45.5125, -73.5807], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let allSeminars = [];
+    let markersLayer = L.layerGroup().addTo(map);
+
+    function renderView(items) {
+      markersLayer.clearLayers();
+      const listContainer = document.getElementById('seminar-list');
+      listContainer.innerHTML = '';
+
+      if (items.length === 0) {
+        listContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem;">Aucun stage ne correspond aux critères.</p>';
+        return;
+      }
+
+      const bounds = [];
+
+      items.forEach(item => {
+        const lat = parseFloat(item['Latitude']);
+        const lng = parseFloat(item['Longitude']);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          bounds.push([lat, lng]);
+          const marker = L.marker([lat, lng]).addTo(markersLayer);
+          marker.bindPopup(`
+            <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
+            <em>${item['Titre / Grade'] || ''}</em><br>
+            📅 ${item['Date Début']} au ${item['Date Fin']}<br>
+            📍 ${item['Dojo Hôte']}<br>
+            💰 Complet : ${item['Tarif Complet'] || 'N/C'}<br>
+            ${item['Lien Inscription / Web'] ? `<a href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent); font-weight:600;">Lien Inscription</a>` : ''}
+          `);
+
+          // Carte latérale
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <span class="badge">${item['Courant / Affiliation'] || 'Aïkido'}</span>
+            <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
+            <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)']}</strong> (${item['Titre / Grade'] || ''})</div>
+            <div class="card-meta">📅 ${item['Date Début']} au ${item['Date Fin']}</div>
+            <div class="card-meta">📍 ${item['Dojo Hôte']} (${item['Ville']})</div>
+            <div class="card-price">💰 ${item['Tarif Complet'] || 'Tarif à venir'}</div>
+            ${item['Lien Inscription / Web'] ? `<a class="card-link" href="${item['Lien Inscription / Web']}" target="_blank">Page officielle / Inscription →</a>` : ''}
+          `;
+
+          card.onclick = () => {
+            map.flyTo([lat, lng], 15);
+            marker.openPopup();
+          };
+
+          listContainer.appendChild(card);
+        }
+      });
+
+      // Recentre automatiquement la vue sur l'ensemble des points
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    function applyFilters() {
+      const city = document.getElementById('filter-city').value;
+      const affil = document.getElementById('filter-affiliation').value;
+
+      const filtered = allSeminars.filter(item => {
+        const matchStatus = (item['Statut'] || '').trim().toLowerCase() === 'publié';
+        const matchCity = city === 'ALL' || (item['Ville'] || '').toLowerCase().includes(city.toLowerCase());
+        const matchAffil = affil === 'ALL' || (item['Courant / Affiliation'] || '').toLowerCase().includes(affil.toLowerCase());
+        return matchStatus && matchCity && matchAffil;
+      });
+
+      renderView(filtered);
+    }
+
+    document.getElementById('filter-city').addEventListener('change', applyFilters);
+    document.getElementById('filter-affiliation').addEventListener('change', applyFilters);
+
+    // Chargement dynamique du Google Sheet via PapaParse
+    Papa.parse(GOOGLE_SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        allSeminars = results.data;
+        applyFilters();
+      },
+      error: function(err) {
+        document.getElementById('seminar-list').innerHTML = '<p style="color:red;">Erreur de chargement des données.</p>';
+      }
+    });
+  </script>
+</body>
+</html>
