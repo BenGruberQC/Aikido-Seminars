@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.js"></script>
 
-  <!-- PapaParse pour lire le CSV Google Sheets -->
+  <!-- PapaParse -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
@@ -24,12 +24,13 @@
       --border: #e2e8f0;
       --text: #0f172a;
       --text-muted: #64748b;
+      --reserved: #94a3b8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
 
-    /* En-tête avec Bannière & Crédit */
+    /* Header */
     header {
       background: var(--primary);
       color: #fff;
@@ -40,24 +41,11 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 20;
     }
-    .header-brand {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+    .header-brand { display: flex; align-items: center; gap: 14px; }
     .header-title h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
     .header-title span { font-size: 0.8rem; color: #94a3b8; }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .header-credit {
-      text-align: right;
-      font-size: 0.8rem;
-      color: #94a3b8;
-    }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .header-credit { text-align: right; font-size: 0.8rem; color: #94a3b8; }
     .header-credit strong { color: #f1f5f9; }
 
     .lang-btn {
@@ -69,41 +57,57 @@
       font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s;
-    }
-    .lang-btn:hover {
-      background: #475569;
     }
 
-    /* Barre de commandes et filtres */
+    /* Barre de filtres */
     #filter-bar {
       background: #fff;
       padding: 10px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
       flex-wrap: wrap;
       z-index: 10;
     }
-    select {
+    select, .filter-control {
       padding: 6px 12px;
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 0.85rem;
-      outline: none;
       background: #fff;
+      outline: none;
     }
 
-    .action-group {
-      margin-left: auto;
-      display: flex;
-      gap: 8px;
+    .btn-geo {
+      display: inline-flex;
       align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
     }
+    .btn-geo.active { background: #dbeafe; border-color: var(--accent); color: var(--accent); }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .action-group { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
     .btn-submit {
-      padding: 6px 14px;
+      padding: 6px 12px;
       border: 1px solid var(--accent);
       border-radius: 6px;
       background: #eff6ff;
@@ -111,21 +115,11 @@
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn-submit:hover {
-      background: #dbeafe;
     }
 
-    .view-toggles {
-      display: flex;
-      gap: 6px;
-    }
+    .view-toggles { display: flex; gap: 6px; }
     .toggle-btn {
-      padding: 6px 14px;
+      padding: 6px 12px;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: #f1f5f9;
@@ -133,15 +127,10 @@
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-muted);
-      transition: all 0.2s;
     }
-    .toggle-btn.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
+    .toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* Fenêtre modale */
+    /* Modal */
     #modal-proposer {
       display: none;
       position: fixed;
@@ -158,20 +147,9 @@
       max-width: 480px;
       border-radius: 12px;
       padding: 24px;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
       position: relative;
     }
-    .modal-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      border: none;
-      background: transparent;
-      font-size: 1.4rem;
-      cursor: pointer;
-      color: var(--text-muted);
-      line-height: 1;
-    }
+    .modal-close { position: absolute; top: 14px; right: 14px; border: none; background: transparent; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
     .option-card {
       display: flex;
       align-items: center;
@@ -182,44 +160,17 @@
       text-decoration: none;
       color: var(--text);
       background: #f8fafc;
+      margin-top: 10px;
       transition: all 0.2s;
     }
-    .option-card:hover {
-      border-color: var(--accent);
-      background: #eff6ff;
-      transform: translateY(-1px);
-    }
+    .option-card:hover { border-color: var(--accent); background: #eff6ff; }
 
-    /* Vues */
-    #main-content {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-    }
-    #map-view {
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
+    /* Contenu */
+    #main-content { flex: 1; position: relative; overflow: hidden; display: flex; }
+    #map-view { display: flex; width: 100%; height: 100%; }
     #map { flex: 1; height: 100%; z-index: 1; }
-    #sidebar {
-      width: 380px;
-      background: #fff;
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
-      padding: 16px;
-      z-index: 2;
-    }
-
-    #calendar-view {
-      display: none;
-      width: 100%;
-      height: 100%;
-      background: #fff;
-      padding: 20px;
-      overflow-y: auto;
-    }
+    #sidebar { width: 400px; background: #fff; border-left: 1px solid var(--border); overflow-y: auto; padding: 16px; z-index: 2; }
+    #calendar-view { display: none; width: 100%; height: 100%; background: #fff; padding: 20px; overflow-y: auto; }
 
     /* Cartes séminaires */
     .card {
@@ -231,29 +182,63 @@
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      position: relative;
     }
     .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+    .card.reserved-card { border-left: 4px solid var(--reserved); background: #fdfdfe; }
+    .card.past-card { opacity: 0.65; background: #f8fafc; }
+
+    .badge-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
     .badge {
-      display: inline-block;
       padding: 2px 8px;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 600;
       border-radius: 12px;
       background: #eff6ff;
       color: var(--accent);
-      margin-bottom: 6px;
     }
-    .card h3 { font-size: 1rem; color: var(--primary); margin-bottom: 4px; }
-    .card-meta { font-size: 0.85rem; color: var(--text-muted); margin: 3px 0; }
-    .card-price { font-size: 0.9rem; font-weight: 600; color: #16a34a; margin-top: 6px; }
-    .card-link { display: inline-block; margin-top: 8px; font-size: 0.8rem; color: var(--accent); font-weight: 600; text-decoration: none; }
+    .badge.badge-open { background: #ecfdf5; color: #047857; }
+    .badge.badge-reserved { background: #f1f5f9; color: #475569; }
+    .badge.badge-past { background: #e2e8f0; color: #64748b; }
 
-    .fc-event { cursor: pointer; }
+    .card h3 { font-size: 1rem; color: var(--primary); margin-bottom: 6px; }
+    .card-meta { font-size: 0.85rem; color: var(--text-muted); margin: 3px 0; }
+    .card-price { font-size: 0.88rem; font-weight: 600; color: #16a34a; margin-top: 6px; }
+
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .btn-card-action {
+      font-size: 0.76rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+    }
+    .btn-card-action:hover { background: #e2e8f0; }
+
+    .card-poster-thumb {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-top: 8px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+    }
+
+    /* Popups Leaflet */
+    .popup-content { font-family: inherit; font-size: 0.85rem; max-width: 260px; }
+    .popup-content img { width: 100%; max-height: 140px; object-fit: cover; border-radius: 4px; margin-top: 6px; }
 
     @media (max-width: 850px) {
-      header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      header { flex-direction: column; align-items: flex-start; gap: 8px; }
       .header-right { width: 100%; justify-content: space-between; }
-      .header-credit { text-align: left; }
       #map-view { flex-direction: column-reverse; }
       #sidebar { width: 100%; height: 45%; }
       #map { height: 55%; }
@@ -265,11 +250,10 @@
 </head>
 <body>
 
-  <!-- En-tête -->
   <header>
     <div class="header-brand">
       <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 4px 10px; border-radius: 6px;">
-        <svg width="38" height="38" viewBox="0 0 100 100" style="display: block;">
+        <svg width="36" height="36" viewBox="0 0 100 100" style="display: block;">
           <circle cx="50" cy="50" r="48" fill="#e11d48"/>
           <path d="M 50 14 L 54 26 L 63 22 L 61 34 L 74 33 L 70 42 L 84 48 L 72 58 L 76 66 L 62 64 L 59 74 L 53 71 L 52 86 L 48 86 L 47 71 L 41 74 L 38 64 L 24 66 L 28 58 L 16 48 L 30 42 L 26 33 L 39 34 L 37 22 L 46 26 Z" fill="#ffffff"/>
           <text x="50" y="44" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">合</text>
@@ -277,11 +261,10 @@
           <text x="50" y="72" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">道</text>
         </svg>
         <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.15;">
-          <span style="font-size: 0.78rem; font-weight: 700; color: #0f172a; letter-spacing: -0.2px;">Canadian Aikido Federation</span>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #334155; letter-spacing: -0.2px;">Fédération Canadienne d'Aïkido</span>
+          <span style="font-size: 0.78rem; font-weight: 700; color: #0f172a;">Canadian Aikido Federation</span>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #334155;">Fédération Canadienne d'Aïkido</span>
         </div>
       </div>
-
       <div class="header-title">
         <h1 id="txt-site-title">Séminaires d'Aïkido</h1>
         <span id="txt-site-sub">Portail National & Calendrier des Stages</span>
@@ -291,52 +274,65 @@
     <div class="header-right">
       <div class="header-credit">
         <span id="txt-credit-dev">Développé par</span> <strong>BenGruberQC</strong><br>
-        Fédération Canadienne d'Aïkido (CAF / FCA)
+        CAF / FCA
       </div>
       <button id="lang-btn" class="lang-btn" onclick="toggleLanguage()">EN</button>
     </div>
   </header>
 
-  <!-- Fenêtre Modale de soumission -->
+  <!-- Modal proposition -->
   <div id="modal-proposer">
     <div class="modal-box">
       <button class="modal-close" onclick="document.getElementById('modal-proposer').style.display='none'">&times;</button>
       <h2 id="txt-modal-title" style="font-size: 1.15rem; color: var(--primary); margin-bottom: 6px;">Proposer un séminaire</h2>
-      <p id="txt-modal-desc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px;">
+      <p id="txt-modal-desc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
         Sélectionnez le mode de transmission qui vous convient :
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <a class="option-card" href="https://forms.gle/Fv8C4q4dTvhDTQuF7" target="_blank" onclick="document.getElementById('modal-proposer').style.display='none'">
-          <span style="font-size: 1.6rem;">📝</span>
-          <div>
-            <div id="txt-form-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Remplir le formulaire en ligne</div>
-            <div id="txt-form-sub" style="font-size: 0.75rem; color: var(--text-muted);">Méthode recommandée (traitement accéléré)</div>
-          </div>
-        </a>
+      <a class="option-card" href="https://forms.gle/Fv8C4q4dTvhDTQuF7" target="_blank" onclick="document.getElementById('modal-proposer').style.display='none'">
+        <span style="font-size: 1.6rem;">📝</span>
+        <div>
+          <div id="txt-form-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Remplir le formulaire en ligne</div>
+          <div id="txt-form-sub" style="font-size: 0.75rem; color: var(--text-muted);">Idéal pour déclarer un stage ou réserver une date</div>
+        </div>
+      </a>
 
-        <a id="mail-link" class="option-card" href="mailto:bgruberca@gmail.com?subject=Nouveau%20s%C3%A9minaire%20A%C3%AFkido%20-%20Affiche&body=Bonjour,%0D%0A%0D%0AVeuillez%20trouver%20en%20pi%C3%A8ce%20jointe%20l'affiche%20du%20stage%20%C3%A0%20ajouter%20au%20registre.%0D%0A%0D%0AD%C3%A9tails%20compl%C3%A9mentaires%20:%0D%0A-%20Dojo%20h%C3%B4te%20:%0D%0A-%20Ville%20:%0D%0A-%20Dates%20:%0D%0A-%20Lien%20web%20/page%20:%20" onclick="document.getElementById('modal-proposer').style.display='none'">
-          <span style="font-size: 1.6rem;">✉️</span>
-          <div>
-            <div id="txt-mail-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
-            <div id="txt-mail-sub" style="font-size: 0.75rem; color: var(--text-muted);">Transmettre votre flyer PDF ou JPG à bgruberca@gmail.com</div>
-          </div>
-        </a>
-      </div>
+      <a id="mail-link" class="option-card" href="mailto:bgruberca@gmail.com?subject=Nouveau%20s%C3%A9minaire%20A%C3%AFkido%20-%20Affiche&body=Bonjour,%0D%0A%0D%0AVeuillez%20trouver%20en%20pi%C3%A8ce%20jointe%20l'affiche%20du%20stage%20%C3%A0%20ajouter%20au%20registre.%0D%0A%0D%0AD%C3%A9tails%20compl%C3%A9mentaires%20:%0D%0A-%20Dojo%20h%C3%B4te%20:%0D%0A-%20Ville%20:%0D%0A-%20Dates%20:%0D%0A-%20Lien%20web%20/page%20:%20" onclick="document.getElementById('modal-proposer').style.display='none'">
+        <span style="font-size: 1.6rem;">✉️</span>
+        <div>
+          <div id="txt-mail-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
+          <div id="txt-mail-sub" style="font-size: 0.75rem; color: var(--text-muted);">Transmettre votre visuel à bgruberca@gmail.com</div>
+        </div>
+      </a>
     </div>
   </div>
 
-  <!-- Barre de commandes et filtres -->
+  <!-- Barre de filtres -->
   <div id="filter-bar">
     <label><strong id="txt-filter-label">Filtrer :</strong></label>
     <select id="filter-month"><option value="ALL">Tous les mois</option></select>
     <select id="filter-sensei"><option value="ALL">Tous les intervenants</option></select>
-    <select id="filter-city"><option value="ALL">Toutes les villes</option></select>
-    <select id="filter-affiliation"><option value="ALL">Toutes affiliations</option></select>
+    <select id="filter-city"><option value="ALL">Toutes les régions / villes</option></select>
+
+    <!-- Géolocalisation Près de moi -->
+    <button id="btn-near-me" class="btn-geo" onclick="toggleGeolocation()">
+      📍 <span id="txt-near-me">Autour de moi</span>
+    </button>
+    <select id="filter-radius" class="filter-control" style="display:none;" onchange="applyFilters()">
+      <option value="100">100 km</option>
+      <option value="250" selected>250 km</option>
+      <option value="500">500 km</option>
+    </select>
+
+    <!-- Archives -->
+    <label class="checkbox-label">
+      <input type="checkbox" id="check-archives" onchange="applyFilters()" />
+      <span id="txt-archives-label">Inclure les archives</span>
+    </label>
 
     <div class="action-group">
       <button id="btn-submit-action" class="btn-submit" onclick="document.getElementById('modal-proposer').style.display='flex'">
-        ➕ Proposer un séminaire
+        ➕ Proposer
       </button>
 
       <div class="view-toggles">
@@ -346,18 +342,16 @@
     </div>
   </div>
 
-  <!-- Zone de contenu -->
+  <!-- Contenu -->
   <div id="main-content">
-    <!-- Vue Carte -->
     <div id="map-view">
       <div id="map"></div>
       <div id="sidebar">
-        <h2 id="txt-sidebar-title" style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires à venir</h2>
+        <h2 id="txt-sidebar-title" style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires</h2>
         <div id="seminar-list">Chargement des données...</div>
       </div>
     </div>
 
-    <!-- Vue Calendrier -->
     <div id="calendar-view">
       <div id="calendar"></div>
     </div>
@@ -367,7 +361,6 @@
   <script>
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
 
-    // Dictionnaire bilingue
     const i18n = {
       fr: {
         siteTitle: "Séminaires d'Aïkido",
@@ -376,26 +369,30 @@
         filterLabel: "Filtrer :",
         allMonths: "Tous les mois",
         allSensei: "Tous les intervenants",
-        allCities: "Toutes les villes",
-        allAffiliations: "Toutes affiliations",
-        btnSubmit: "➕ Proposer un séminaire",
+        allCities: "Toutes régions / villes",
+        nearMe: "Autour de moi",
+        archivesLabel: "Inclure les archives",
+        btnSubmit: "➕ Proposer",
         btnMap: "🗺️ Carte",
         btnCal: "📅 Calendrier",
-        sidebarTitle: "Séminaires à venir",
+        sidebarTitle: "Séminaires",
         noSeminar: "Aucun stage ne correspond aux critères.",
-        loading: "Chargement des données...",
+        loading: "Chargement des séminaires...",
+        errorLoading: "⚠️ Impossible de charger les données du Google Sheet. Veuillez rafraîchir la page ou réessayer ultérieurement.",
         modalTitle: "Proposer un séminaire",
         modalDesc: "Sélectionnez le mode de transmission qui vous convient :",
         formTitle: "Remplir le formulaire en ligne",
-        formSub: "Méthode recommandée (traitement accéléré)",
+        formSub: "Idéal pour déclarer un stage ou réserver une date",
         mailTitle: "Envoyer l'affiche par courriel",
-        mailSub: "Transmettre votre flyer PDF ou JPG à bgruberca@gmail.com",
-        mailSubject: "Nouveau séminaire Aïkido - Affiche",
-        mailBody: "Bonjour,%0D%0A%0D%0AVeuillez trouver en pièce jointe l'affiche du stage à ajouter au registre.%0D%0A%0D%0ADétails complémentaires :%0D%0A- Dojo hôte :%0D%0A- Ville :%0D%0A- Dates :%0D%0A- Lien web /page :%0D%0A",
-        labelFrom: "au",
-        labelFee: "Tarif Complet",
+        mailSub: "Transmettre votre visuel à bgruberca@gmail.com",
+        labelTo: "au",
         feeTBD: "Tarif à venir",
-        labelLink: "Page officielle / Inscription →",
+        labelCalGoogle: "📅 Google Agenda",
+        labelShare: "🔗 Partager",
+        labelLink: "Page officielle →",
+        badgeReserved: "🔒 Date réservée",
+        badgeOpen: "Ouvert à tous styles",
+        badgePast: "Passé",
         calLocale: "fr",
         calToday: "Aujourd'hui",
         calMonth: "Mois",
@@ -408,26 +405,30 @@
         filterLabel: "Filter:",
         allMonths: "All months",
         allSensei: "All instructors",
-        allCities: "All cities",
-        allAffiliations: "All affiliations",
-        btnSubmit: "➕ Submit a Seminar",
+        allCities: "All regions / cities",
+        nearMe: "Near me",
+        archivesLabel: "Include past events",
+        btnSubmit: "➕ Submit",
         btnMap: "🗺️ Map",
         btnCal: "📅 Calendar",
-        sidebarTitle: "Upcoming Seminars",
+        sidebarTitle: "Seminars",
         noSeminar: "No seminars match the selected criteria.",
-        loading: "Loading data...",
+        loading: "Loading seminars...",
+        errorLoading: "⚠️ Unable to load Google Sheet data. Please refresh or try again later.",
         modalTitle: "Submit a Seminar",
         modalDesc: "Select your preferred transmission method:",
         formTitle: "Fill out the online form",
-        formSub: "Recommended method (faster publication)",
+        formSub: "Ideal to submit an event or hold a date",
         mailTitle: "Send the poster by email",
-        mailSub: "Send your PDF or JPG flyer to bgruberca@gmail.com",
-        mailSubject: "New Aikido Seminar - Poster",
-        mailBody: "Hello,%0D%0A%0D%0APlease find attached the seminar poster to add to the registry.%0D%0A%0D%0AAdditional details:%0D%0A- Host dojo:%0D%0A- City:%0D%0A- Dates:%0D%0A- Web/registration link:%0D%0A",
-        labelFrom: "to",
-        labelFee: "Full Fee",
+        mailSub: "Send your flyer to bgruberca@gmail.com",
+        labelTo: "to",
         feeTBD: "Fee TBD",
-        labelLink: "Official Page / Registration →",
+        labelCalGoogle: "📅 Google Calendar",
+        labelShare: "🔗 Share",
+        labelLink: "Official Page →",
+        badgeReserved: "🔒 Date Reserved",
+        badgeOpen: "Open to all styles",
+        badgePast: "Past event",
         calLocale: "en",
         calToday: "Today",
         calMonth: "Month",
@@ -436,29 +437,90 @@
     };
 
     let currentLang = 'fr';
+    let userLocation = null;
+    let allSeminars = [];
+    let markersMap = {};
+    let markersLayer = L.layerGroup();
+    let calendar = null;
+    let dataLoaded = false;
 
-    // Carte Leaflet
-    const map = L.map('map').setView([45.5125, -73.5807], 11);
+    // Initialisation carte
+    const map = L.map('map').setView([45.5125, -73.5807], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     }).addTo(map);
+    markersLayer.addTo(map);
 
-    let allSeminars = [];
-    let markersLayer = L.layerGroup().addTo(map);
-    let calendar = null;
-
-    function getYearMonthKey(dateStr) {
-      if (!dateStr || dateStr.length < 7) return null;
-      return dateStr.substring(0, 7);
+    // Formule Haversine (distance en kilomètres)
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     }
 
-    function formatYearMonthLabel(yearMonthStr, lang) {
-      const parts = yearMonthStr.split('-');
-      if (parts.length < 2) return yearMonthStr;
-      const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
-      const label = date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' });
-      return label.charAt(0).toUpperCase() + label.slice(1);
+    function isSeminarPast(dateFinStr) {
+      if (!dateFinStr) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const end = new Date(dateFinStr);
+      end.setHours(23, 59, 59, 999);
+      return end < today;
+    }
+
+    function formatGoogleCalendarUrl(item) {
+      const title = encodeURIComponent((item['Titre du séminaire'] || item['Intervenant (Sensei)'] || 'Stage Aïkido'));
+      const start = (item['Date Début'] || '').replace(/-/g, '');
+      let end = (item['Date Fin'] || item['Date Début'] || '').replace(/-/g, '');
+      if (end) {
+        const d = new Date(item['Date Fin'] || item['Date Début']);
+        d.setDate(d.getDate() + 1);
+        end = d.toISOString().split('T')[0].replace(/-/g, '');
+      }
+      const loc = encodeURIComponent([item['Dojo Hôte'], item['Adresse Civique'], item['Ville']].filter(Boolean).join(', '));
+      const details = encodeURIComponent((item['Lien Inscription / Web'] ? item['Lien Inscription / Web'] + "\n\n" : "") + (item['Notes / Remarques'] || ''));
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&location=${loc}&details=${details}`;
+    }
+
+    function copySeminarLink(id) {
+      const url = `${window.location.origin}${window.location.pathname}#${id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert(currentLang === 'fr' ? "Lien copié dans le presse-papier !" : "Link copied to clipboard!");
+      });
+    }
+
+    function toggleGeolocation() {
+      const btn = document.getElementById('btn-near-me');
+      const radiusSelect = document.getElementById('filter-radius');
+
+      if (userLocation) {
+        userLocation = null;
+        btn.classList.remove('active');
+        radiusSelect.style.display = 'none';
+        applyFilters();
+      } else {
+        if (!navigator.geolocation) {
+          alert(currentLang === 'fr' ? "Géolocalisation non supportée par votre navigateur." : "Geolocation not supported by your browser.");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            btn.classList.add('active');
+            radiusSelect.style.display = 'inline-block';
+            applyFilters();
+          },
+          err => {
+            alert(currentLang === 'fr' ? "Impossible de récupérer votre position." : "Unable to retrieve your location.");
+          }
+        );
+      }
     }
 
     function initCalendar() {
@@ -481,11 +543,9 @@
           const t = i18n[currentLang];
           alert(
             (item['Titre du séminaire'] || item['Intervenant (Sensei)']) + "\n\n" +
-            (currentLang === 'fr' ? "Sensei : " : "Instructor: ") + (item['Intervenant (Sensei)'] || 'N/C') + " (" + (item['Titre / Grade'] || '') + ")\n" +
-            "Dates : " + item['Date Début'] + " " + t.labelFrom + " " + item['Date Fin'] + "\n" +
-            (currentLang === 'fr' ? "Lieu : " : "Location: ") + item['Dojo Hôte'] + " - " + item['Ville'] + "\n" +
-            t.labelFee + " : " + (item['Tarif Complet'] || t.feeTBD) + "\n" +
-            (item['Lien Inscription / Web'] ? "\n" + item['Lien Inscription / Web'] : "")
+            "Sensei : " + (item['Intervenant (Sensei)'] || 'N/C') + "\n" +
+            "Dates : " + item['Date Début'] + " " + t.labelTo + " " + item['Date Fin'] + "\n" +
+            "Lieu : " + item['Dojo Hôte'] + " (" + item['Ville'] + ")"
           );
         }
       });
@@ -496,38 +556,36 @@
       const monthSelect = document.getElementById('filter-month');
       const senseiSelect = document.getElementById('filter-sensei');
       const citySelect = document.getElementById('filter-city');
-      const affilSelect = document.getElementById('filter-affiliation');
 
       const savedMonth = monthSelect.value;
       const savedSensei = senseiSelect.value;
       const savedCity = citySelect.value;
-      const savedAffil = affilSelect.value;
 
       const months = new Set();
       const senseis = new Set();
       const cities = new Set();
-      const affiliations = new Set();
 
       items.forEach(item => {
-        const ym = getYearMonthKey(item['Date Début']);
-        if (ym) months.add(ym);
-        if (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].trim() !== '') senseis.add(item['Intervenant (Sensei)'].trim());
-        if (item['Ville'] && item['Ville'].trim() !== '') cities.add(item['Ville'].trim());
-        if (item['Courant / Affiliation'] && item['Courant / Affiliation'].trim() !== '') affiliations.add(item['Courant / Affiliation'].trim());
+        if (item['Date Début'] && item['Date Début'].length >= 7) months.add(item['Date Début'].substring(0, 7));
+        if (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].trim() !== '') {
+          item['Intervenant (Sensei)'].split(',').forEach(s => senseis.add(s.trim()));
+        }
+        const lieu = [item['Ville'], item['Province / Région']].filter(Boolean).join(', ');
+        if (lieu) cities.add(lieu);
       });
 
       const t = i18n[currentLang];
-
       monthSelect.innerHTML = `<option value="ALL">${t.allMonths}</option>`;
       Array.from(months).sort().forEach(ym => {
         const opt = document.createElement('option');
         opt.value = ym;
-        opt.textContent = formatYearMonthLabel(ym, currentLang);
+        const d = new Date(ym + "-01T12:00:00");
+        opt.textContent = d.toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' });
         monthSelect.appendChild(opt);
       });
 
       senseiSelect.innerHTML = `<option value="ALL">${t.allSensei}</option>`;
-      Array.from(senseis).sort((a, b) => a.localeCompare(b, currentLang)).forEach(s => {
+      Array.from(senseis).sort((a,b) => a.localeCompare(b, currentLang)).forEach(s => {
         const opt = document.createElement('option');
         opt.value = s;
         opt.textContent = s;
@@ -535,29 +593,21 @@
       });
 
       citySelect.innerHTML = `<option value="ALL">${t.allCities}</option>`;
-      Array.from(cities).sort((a, b) => a.localeCompare(b, currentLang)).forEach(c => {
+      Array.from(cities).sort((a,b) => a.localeCompare(b, currentLang)).forEach(c => {
         const opt = document.createElement('option');
         opt.value = c;
         opt.textContent = c;
         citySelect.appendChild(opt);
       });
 
-      affilSelect.innerHTML = `<option value="ALL">${t.allAffiliations}</option>`;
-      Array.from(affiliations).sort((a, b) => a.localeCompare(b, currentLang)).forEach(a => {
-        const opt = document.createElement('option');
-        opt.value = a;
-        opt.textContent = a;
-        affilSelect.appendChild(opt);
-      });
-
       if (Array.from(monthSelect.options).some(o => o.value === savedMonth)) monthSelect.value = savedMonth;
       if (Array.from(senseiSelect.options).some(o => o.value === savedSensei)) senseiSelect.value = savedSensei;
       if (Array.from(citySelect.options).some(o => o.value === savedCity)) citySelect.value = savedCity;
-      if (Array.from(affilSelect.options).some(o => o.value === savedAffil)) affilSelect.value = savedAffil;
     }
 
     function renderView(items) {
       markersLayer.clearLayers();
+      markersMap = {};
       const listContainer = document.getElementById('seminar-list');
       listContainer.innerHTML = '';
       const t = i18n[currentLang];
@@ -571,11 +621,12 @@
             d.setDate(d.getDate() + 1);
             endDate = d.toISOString().split('T')[0];
           }
+          const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
           return {
-            title: (item['Intervenant (Sensei)'] ? item['Intervenant (Sensei)'] + ' - ' : '') + (item['Titre du séminaire'] || 'Stage'),
+            title: (isReserved ? "🔒 " : "") + (item['Intervenant (Sensei)'] ? item['Intervenant (Sensei)'] + ' - ' : '') + (item['Titre du séminaire'] || 'Stage'),
             start: item['Date Début'],
             end: endDate,
-            color: '#2563eb',
+            color: isReserved ? '#64748b' : '#2563eb',
             extendedProps: { rawData: item }
           };
         });
@@ -589,38 +640,71 @@
 
       const bounds = [];
 
-      items.forEach(item => {
+      items.forEach((item, index) => {
         const rawLat = (item['Latitude'] || '').toString().replace(',', '.');
         const rawLng = (item['Longitude'] || '').toString().replace(',', '.');
         const lat = parseFloat(rawLat);
         const lng = parseFloat(rawLng);
+        const isPast = isSeminarPast(item['Date Fin']);
+        const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+        const idEvent = item['ID Événement'] || `seminar-${index}`;
+        const posterUrl = item['URL Affiche / Image'] || '';
 
         if (!isNaN(lat) && !isNaN(lng)) {
           bounds.push([lat, lng]);
-          const marker = L.marker([lat, lng]).addTo(markersLayer);
+          const markerColor = isPast ? '#94a3b8' : (isReserved ? '#64748b' : '#2563eb');
+
+          // Marqueur Leaflet personnalisé (cercle SVG)
+          const markerIcon = L.divIcon({
+            className: 'custom-pin',
+            html: `<div style="background-color:${markerColor}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+
+          const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
+          markersMap[idEvent] = { marker, lat, lng };
+
           marker.bindPopup(`
-            <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
-            <em>${item['Titre / Grade'] || ''}</em><br>
-            📅 ${item['Date Début']} ${t.labelFrom} ${item['Date Fin']}<br>
-            📍 ${item['Dojo Hôte']}<br>
-            💰 ${t.labelFee} : ${item['Tarif Complet'] || 'N/C'}<br>
-            ${item['Lien Inscription / Web'] ? `<a href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent); font-weight:600;">${t.labelLink}</a>` : ''}
+            <div class="popup-content">
+              <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
+              <em>${item['Intervenant (Sensei)'] || ''}</em><br>
+              📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}<br>
+              📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})<br>
+              ${isReserved ? `<strong>${t.badgeReserved}</strong>` : (item['Tarif Complet'] ? `💰 ${item['Tarif Complet']}` : '')}
+              ${posterUrl ? `<img src="${posterUrl}" alt="Affiche" />` : ''}
+            </div>
           `);
 
           const card = document.createElement('div');
-          card.className = 'card';
+          card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`;
+          card.id = `card-${idEvent}`;
+
+          const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
+
           card.innerHTML = `
-            <span class="badge">${item['Courant / Affiliation'] || 'Aïkido'}</span>
+            <div class="badge-container">
+              <span class="badge ${isReserved ? 'badge-reserved' : ''}">${isReserved ? t.badgeReserved : (item['Courant / Affiliation'] || 'Aïkido')}</span>
+              ${isUniversal ? `<span class="badge badge-open">${t.badgeOpen}</span>` : ''}
+              ${isPast ? `<span class="badge badge-past">${t.badgePast}</span>` : ''}
+            </div>
             <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
             <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
-            <div class="card-meta">📅 ${item['Date Début']} ${t.labelFrom} ${item['Date Fin']}</div>
-            <div class="card-meta">📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})</div>
-            <div class="card-price">💰 ${item['Tarif Complet'] || t.feeTBD}</div>
-            ${item['Lien Inscription / Web'] ? `<a class="card-link" href="${item['Lien Inscription / Web']}" target="_blank">${t.labelLink}</a>` : ''}
+            <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}</div>
+            <div class="card-meta">📍 ${item['Dojo Hôte']} (${[item['Ville'], item['Province / Région']].filter(Boolean).join(', ')})</div>
+            ${!isReserved ? `<div class="card-price">💰 ${item['Tarif Complet'] || t.feeTBD}</div>` : ''}
+            ${posterUrl ? `<img class="card-poster-thumb" src="${posterUrl}" alt="Affiche" onclick="window.open('${posterUrl}', '_blank')" />` : ''}
+            
+            <div class="card-actions">
+              <button class="btn-card-action" onclick="copySeminarLink('${idEvent}')">${t.labelShare}</button>
+              <a class="btn-card-action" href="${formatGoogleCalendarUrl(item)}" target="_blank">${t.labelCalGoogle}</a>
+              ${item['Lien Inscription / Web'] ? `<a class="btn-card-action" href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent);">${t.labelLink}</a>` : ''}
+            </div>
           `;
 
-          card.onclick = () => {
-            map.flyTo([lat, lng], 14);
+          card.onclick = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'IMG') return;
+            map.flyTo([lat, lng], 13);
             marker.openPopup();
           };
 
@@ -628,8 +712,19 @@
         }
       });
 
-      if (bounds.length > 0) {
+      if (bounds.length > 0 && !window.location.hash) {
         map.fitBounds(bounds, { padding: [40, 40] });
+      }
+
+      // Deep Linking : si un hash #ID est dans l'URL, centrer dessus
+      if (window.location.hash) {
+        const hashId = window.location.hash.substring(1);
+        if (markersMap[hashId]) {
+          map.flyTo([markersMap[hashId].lat, markersMap[hashId].lng], 14);
+          markersMap[hashId].marker.openPopup();
+          const targetCard = document.getElementById(`card-${hashId}`);
+          if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth' });
+        }
       }
     }
 
@@ -637,23 +732,43 @@
       const month = document.getElementById('filter-month').value;
       const sensei = document.getElementById('filter-sensei').value;
       const city = document.getElementById('filter-city').value;
-      const affil = document.getElementById('filter-affiliation').value;
+      const includeArchives = document.getElementById('check-archives').checked;
+      const radiusKm = parseFloat(document.getElementById('filter-radius').value);
 
       const filtered = allSeminars.filter(item => {
-        const matchStatus = (item['Statut'] || '').trim().toLowerCase() === 'publié';
-        const ym = getYearMonthKey(item['Date Début']);
+        const status = (item['Statut'] || '').trim().toLowerCase();
+        const isVisible = status === 'publié' || status.includes('réserv');
+        if (!isVisible) return false;
+
+        const isPast = isSeminarPast(item['Date Fin']);
+        if (!includeArchives && isPast) return false;
+
+        const ym = (item['Date Début'] || '').substring(0, 7);
         const matchMonth = month === 'ALL' || ym === month;
         const matchSensei = sensei === 'ALL' || (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].includes(sensei));
-        const matchCity = city === 'ALL' || (item['Ville'] || '').trim().toLowerCase() === city.toLowerCase();
-        const matchAffil = affil === 'ALL' || (item['Courant / Affiliation'] || '').trim().toLowerCase() === affil.toLowerCase();
-        return matchStatus && matchMonth && matchSensei && matchCity && matchAffil;
+        const lieu = [item['Ville'], item['Province / Région']].filter(Boolean).join(', ');
+        const matchCity = city === 'ALL' || lieu === city;
+
+        // Filtre de géolocalisation
+        let matchGeo = true;
+        if (userLocation) {
+          const lat = parseFloat((item['Latitude'] || '').toString().replace(',', '.'));
+          const lng = parseFloat((item['Longitude'] || '').toString().replace(',', '.'));
+          if (!isNaN(lat) && !isNaN(lng)) {
+            const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, lat, lng);
+            matchGeo = dist <= radiusKm;
+          } else {
+            matchGeo = false;
+          }
+        }
+
+        return matchMonth && matchSensei && matchCity && matchGeo;
       });
 
       filtered.sort((a, b) => (a['Date Début'] || '').localeCompare(b['Date Début'] || ''));
       renderView(filtered);
     }
 
-    // Gestion du bilinguisme
     function toggleLanguage() {
       currentLang = currentLang === 'fr' ? 'en' : 'fr';
       const t = i18n[currentLang];
@@ -663,6 +778,8 @@
       document.getElementById('txt-site-sub').textContent = t.siteSub;
       document.getElementById('txt-credit-dev').textContent = t.creditDev;
       document.getElementById('txt-filter-label').textContent = t.filterLabel;
+      document.getElementById('txt-near-me').textContent = t.nearMe;
+      document.getElementById('txt-archives-label').textContent = t.archivesLabel;
       document.getElementById('btn-submit-action').textContent = t.btnSubmit;
       document.getElementById('btn-map').textContent = t.btnMap;
       document.getElementById('btn-calendar').textContent = t.btnCal;
@@ -675,23 +792,20 @@
       document.getElementById('txt-mail-title').textContent = t.mailTitle;
       document.getElementById('txt-mail-sub').textContent = t.mailSub;
 
-      document.getElementById('mail-link').href = `mailto:bgruberca@gmail.com?subject=${encodeURIComponent(t.mailSubject)}&body=${t.mailBody}`;
-
       if (calendar) {
         calendar.setOption('locale', t.calLocale);
-        calendar.setOption('buttonText', {
-          today: t.calToday,
-          month: t.calMonth,
-          list: t.calList
-        });
+        calendar.setOption('buttonText', { today: t.calToday, month: t.calMonth, list: t.calList });
       }
 
-      const published = allSeminars.filter(item => (item['Statut'] || '').trim().toLowerCase() === 'publié');
-      populateDropdowns(published);
+      const activeSeminars = allSeminars.filter(item => {
+        const s = (item['Statut'] || '').trim().toLowerCase();
+        return s === 'publié' || s.includes('réserv');
+      });
+      populateDropdowns(activeSeminars);
       applyFilters();
     }
 
-    // Basculement Vue Carte / Calendrier
+    // Bascule Carte / Calendrier
     const btnMap = document.getElementById('btn-map');
     const btnCalendar = document.getElementById('btn-calendar');
     const mapView = document.getElementById('map-view');
@@ -710,9 +824,7 @@
       btnMap.classList.remove('active');
       mapView.style.display = 'none';
       calView.style.display = 'block';
-      if (!calendar) {
-        initCalendar();
-      }
+      if (!calendar) initCalendar();
       calendar.updateSize();
       applyFilters();
     });
@@ -720,7 +832,13 @@
     document.getElementById('filter-month').addEventListener('change', applyFilters);
     document.getElementById('filter-sensei').addEventListener('change', applyFilters);
     document.getElementById('filter-city').addEventListener('change', applyFilters);
-    document.getElementById('filter-affiliation').addEventListener('change', applyFilters);
+
+    // Minuteur de sécurité pour le chargement Google Sheet (5 secondes)
+    const loadTimeout = setTimeout(() => {
+      if (!dataLoaded) {
+        document.getElementById('seminar-list').innerHTML = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+      }
+    }, 5000);
 
     // Chargement CSV
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
@@ -728,13 +846,20 @@
       header: true,
       skipEmptyLines: true,
       complete: function(results) {
+        dataLoaded = true;
+        clearTimeout(loadTimeout);
         allSeminars = results.data;
-        const publishedSeminars = allSeminars.filter(item => (item['Statut'] || '').trim().toLowerCase() === 'publié');
-        populateDropdowns(publishedSeminars);
+        const activeSeminars = allSeminars.filter(item => {
+          const s = (item['Statut'] || '').trim().toLowerCase();
+          return s === 'publié' || s.includes('réserv');
+        });
+        populateDropdowns(activeSeminars);
         applyFilters();
       },
       error: function() {
-        document.getElementById('seminar-list').innerHTML = `<p style="color:red;">Erreur de chargement des données.</p>`;
+        dataLoaded = true;
+        clearTimeout(loadTimeout);
+        document.getElementById('seminar-list').innerHTML = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
       }
     });
   </script>
