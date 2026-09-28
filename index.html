@@ -30,7 +30,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
 
-    /* Header */
+    /* En-tête */
     header {
       background: var(--primary);
       color: #fff;
@@ -57,7 +57,9 @@
       font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
+      transition: background 0.2s;
     }
+    .lang-btn:hover { background: #475569; }
 
     /* Barre de filtres */
     #filter-bar {
@@ -115,7 +117,9 @@
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
+      transition: background 0.2s;
     }
+    .btn-submit:hover { background: #dbeafe; }
 
     .view-toggles { display: flex; gap: 6px; }
     .toggle-btn {
@@ -127,10 +131,11 @@
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-muted);
+      transition: all 0.2s;
     }
     .toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* Modal */
+    /* Modal proposition */
     #modal-proposer {
       display: none;
       position: fixed;
@@ -149,7 +154,7 @@
       padding: 24px;
       position: relative;
     }
-    .modal-close { position: absolute; top: 14px; right: 14px; border: none; background: transparent; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
+    .modal-close { position: absolute; top: 14px; right: 14px; border: none; background: transparent; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
     .option-card {
       display: flex;
       align-items: center;
@@ -163,9 +168,9 @@
       margin-top: 10px;
       transition: all 0.2s;
     }
-    .option-card:hover { border-color: var(--accent); background: #eff6ff; }
+    .option-card:hover { border-color: var(--accent); background: #eff6ff; transform: translateY(-1px); }
 
-    /* Contenu */
+    /* Conteneur principal */
     #main-content { flex: 1; position: relative; overflow: hidden; display: flex; }
     #map-view { display: flex; width: 100%; height: 100%; }
     #map { flex: 1; height: 100%; z-index: 1; }
@@ -219,22 +224,12 @@
       gap: 4px;
       cursor: pointer;
       border: 1px solid var(--border);
+      transition: background 0.15s;
     }
     .btn-card-action:hover { background: #e2e8f0; }
 
-    .card-poster-thumb {
-      width: 100%;
-      max-height: 160px;
-      object-fit: cover;
-      border-radius: 6px;
-      margin-top: 8px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-    }
-
     /* Popups Leaflet */
-    .popup-content { font-family: inherit; font-size: 0.85rem; max-width: 260px; }
-    .popup-content img { width: 100%; max-height: 140px; object-fit: cover; border-radius: 4px; margin-top: 6px; }
+    .popup-content { font-family: inherit; font-size: 0.85rem; max-width: 260px; line-height: 1.4; }
 
     @media (max-width: 850px) {
       header { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -250,6 +245,7 @@
 </head>
 <body>
 
+  <!-- En-tête -->
   <header>
     <div class="header-brand">
       <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 4px 10px; border-radius: 6px;">
@@ -280,7 +276,7 @@
     </div>
   </header>
 
-  <!-- Modal proposition -->
+  <!-- Modale proposition -->
   <div id="modal-proposer">
     <div class="modal-box">
       <button class="modal-close" onclick="document.getElementById('modal-proposer').style.display='none'">&times;</button>
@@ -301,7 +297,7 @@
         <span style="font-size: 1.6rem;">✉️</span>
         <div>
           <div id="txt-mail-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
-          <div id="txt-mail-sub" style="font-size: 0.75rem; color: var(--text-muted);">Transmettre votre visuel à bgruberca@gmail.com</div>
+          <div id="txt-mail-sub" style="font-size: 0.75rem; color: var(--text-muted);">Transmettre vos informations à bgruberca@gmail.com</div>
         </div>
       </a>
     </div>
@@ -314,7 +310,7 @@
     <select id="filter-sensei"><option value="ALL">Tous les intervenants</option></select>
     <select id="filter-city"><option value="ALL">Toutes les régions / villes</option></select>
 
-    <!-- Géolocalisation Près de moi -->
+    <!-- Géolocalisation -->
     <button id="btn-near-me" class="btn-geo" onclick="toggleGeolocation()">
       📍 <span id="txt-near-me">Autour de moi</span>
     </button>
@@ -384,7 +380,7 @@
         formTitle: "Remplir le formulaire en ligne",
         formSub: "Idéal pour déclarer un stage ou réserver une date",
         mailTitle: "Envoyer l'affiche par courriel",
-        mailSub: "Transmettre votre visuel à bgruberca@gmail.com",
+        mailSub: "Transmettre vos informations à bgruberca@gmail.com",
         labelTo: "au",
         feeTBD: "Tarif à venir",
         labelCalGoogle: "📅 Google Agenda",
@@ -444,7 +440,7 @@
     let calendar = null;
     let dataLoaded = false;
 
-    // Initialisation carte
+    // Initialisation Leaflet
     const map = L.map('map').setView([45.5125, -73.5807], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -452,7 +448,6 @@
     }).addTo(map);
     markersLayer.addTo(map);
 
-    // Formule Haversine (distance en kilomètres)
     function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -648,13 +643,11 @@
         const isPast = isSeminarPast(item['Date Fin']);
         const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
         const idEvent = item['ID Événement'] || `seminar-${index}`;
-        const posterUrl = item['URL Affiche / Image'] || '';
 
         if (!isNaN(lat) && !isNaN(lng)) {
           bounds.push([lat, lng]);
           const markerColor = isPast ? '#94a3b8' : (isReserved ? '#64748b' : '#2563eb');
 
-          // Marqueur Leaflet personnalisé (cercle SVG)
           const markerIcon = L.divIcon({
             className: 'custom-pin',
             html: `<div style="background-color:${markerColor}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
@@ -672,7 +665,6 @@
               📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}<br>
               📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})<br>
               ${isReserved ? `<strong>${t.badgeReserved}</strong>` : (item['Tarif Complet'] ? `💰 ${item['Tarif Complet']}` : '')}
-              ${posterUrl ? `<img src="${posterUrl}" alt="Affiche" />` : ''}
             </div>
           `);
 
@@ -693,7 +685,6 @@
             <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}</div>
             <div class="card-meta">📍 ${item['Dojo Hôte']} (${[item['Ville'], item['Province / Région']].filter(Boolean).join(', ')})</div>
             ${!isReserved ? `<div class="card-price">💰 ${item['Tarif Complet'] || t.feeTBD}</div>` : ''}
-            ${posterUrl ? `<img class="card-poster-thumb" src="${posterUrl}" alt="Affiche" onclick="window.open('${posterUrl}', '_blank')" />` : ''}
             
             <div class="card-actions">
               <button class="btn-card-action" onclick="copySeminarLink('${idEvent}')">${t.labelShare}</button>
@@ -703,7 +694,7 @@
           `;
 
           card.onclick = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'IMG') return;
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
             map.flyTo([lat, lng], 13);
             marker.openPopup();
           };
@@ -716,7 +707,6 @@
         map.fitBounds(bounds, { padding: [40, 40] });
       }
 
-      // Deep Linking : si un hash #ID est dans l'URL, centrer dessus
       if (window.location.hash) {
         const hashId = window.location.hash.substring(1);
         if (markersMap[hashId]) {
@@ -749,7 +739,6 @@
         const lieu = [item['Ville'], item['Province / Région']].filter(Boolean).join(', ');
         const matchCity = city === 'ALL' || lieu === city;
 
-        // Filtre de géolocalisation
         let matchGeo = true;
         if (userLocation) {
           const lat = parseFloat((item['Latitude'] || '').toString().replace(',', '.'));
@@ -805,7 +794,7 @@
       applyFilters();
     }
 
-    // Bascule Carte / Calendrier
+    // Commutation Carte / Calendrier
     const btnMap = document.getElementById('btn-map');
     const btnCalendar = document.getElementById('btn-calendar');
     const mapView = document.getElementById('map-view');
@@ -833,14 +822,14 @@
     document.getElementById('filter-sensei').addEventListener('change', applyFilters);
     document.getElementById('filter-city').addEventListener('change', applyFilters);
 
-    // Minuteur de sécurité pour le chargement Google Sheet (5 secondes)
+    // Minuteur de sécurité (5 secondes)
     const loadTimeout = setTimeout(() => {
       if (!dataLoaded) {
         document.getElementById('seminar-list').innerHTML = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
       }
     }, 5000);
 
-    // Chargement CSV
+    // Lecture du CSV
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
       download: true,
       header: true,
