@@ -30,7 +30,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
 
-    /* En-tête clair et institutionnel */
+    /* En-tête épuré */
     header {
       background: #ffffff;
       color: var(--text);
@@ -41,12 +41,12 @@
       border-bottom: 1px solid var(--border);
       z-index: 20;
     }
-    .header-brand { display: flex; align-items: center; gap: 14px; }
-    .header-title h1 { font-size: 1.1rem; font-weight: 700; color: var(--primary); line-height: 1.2; }
-    .header-title span { font-size: 0.78rem; color: var(--text-muted); }
+    .header-main { display: flex; flex-direction: column; gap: 2px; }
+    .header-main h1 { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+    .header-credit { font-size: 0.78rem; color: var(--text-muted); }
+    .header-credit strong { color: var(--text-muted); font-weight: 600; }
+    
     .header-right { display: flex; align-items: center; gap: 14px; }
-    .header-credit { text-align: right; font-size: 0.78rem; color: var(--text-muted); }
-    .header-credit strong { color: var(--primary); }
 
     .lang-btn {
       padding: 5px 10px;
@@ -244,9 +244,10 @@
     .popup-content { font-family: inherit; font-size: 0.85rem; max-width: 260px; line-height: 1.4; }
 
     @media (max-width: 850px) {
-      header { flex-direction: column; align-items: flex-start; gap: 8px; }
-      .header-right { width: 100%; justify-content: space-between; }
-      #desktop-sidebar { display: none; } /* En mode carte sur mobile, la carte occupe 100% */
+      header { padding: 8px 12px; }
+      .header-main h1 { font-size: 0.95rem; }
+      .header-credit { font-size: 0.72rem; }
+      #desktop-sidebar { display: none; }
       .action-group { margin-left: 0; width: 100%; justify-content: space-between; }
       .view-toggles { width: 100%; }
       .toggle-btn { flex: 1; text-align: center; }
@@ -257,30 +258,14 @@
 
   <!-- En-tête -->
   <header>
-    <div class="header-brand">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <svg width="32" height="32" viewBox="0 0 100 100" style="display: block;">
-          <circle cx="50" cy="50" r="48" fill="#e11d48"/>
-          <path d="M 50 14 L 54 26 L 63 22 L 61 34 L 74 33 L 70 42 L 84 48 L 72 58 L 76 66 L 62 64 L 59 74 L 53 71 L 52 86 L 48 86 L 47 71 L 41 74 L 38 64 L 24 66 L 28 58 L 16 48 L 30 42 L 26 33 L 39 34 L 37 22 L 46 26 Z" fill="#ffffff"/>
-          <text x="50" y="44" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">合</text>
-          <text x="50" y="58" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">氣</text>
-          <text x="50" y="72" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">道</text>
-        </svg>
-        <div style="line-height: 1.15;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #0f172a;">Canadian Aikido Federation</div>
-          <div style="font-size: 0.74rem; font-weight: 500; color: #475569;">Fédération Canadienne d'Aïkido</div>
-        </div>
-      </div>
-      <div class="header-title">
-        <h1 id="txt-site-title">Séminaires d'Aïkido</h1>
-        <span id="txt-site-sub">Portail Web interactif • Calendrier national des stages</span>
+    <div class="header-main">
+      <h1 id="txt-site-title">Séminaires d'Aïkido</h1>
+      <div class="header-credit">
+        <span id="txt-credit-dev">Développé par</span> <strong>BenGruberQC</strong>
       </div>
     </div>
 
     <div class="header-right">
-      <div class="header-credit">
-        <span id="txt-credit-dev">Développé par</span> <strong>BenGruberQC</strong>
-      </div>
       <button id="lang-btn" class="lang-btn" onclick="toggleLanguage()">EN</button>
     </div>
   </header>
@@ -395,7 +380,6 @@
     const i18n = {
       fr: {
         siteTitle: "Séminaires d'Aïkido",
-        siteSub: "Portail Web interactif • Calendrier national des stages",
         creditDev: "Développé par",
         filterLabel: "Filtrer :",
         allMonths: "Tous les mois",
@@ -432,7 +416,6 @@
       },
       en: {
         siteTitle: "Aikido Seminars",
-        siteSub: "Interactive Web Portal • National Seminar Calendar",
         creditDev: "Developed by",
         filterLabel: "Filter:",
         allMonths: "All months",
@@ -485,7 +468,6 @@
     }).addTo(map);
     markersLayer.addTo(map);
 
-    // Formatage intelligent des devises CAD / USD
     function formatFeeWithCurrency(feeString, provinceOrState) {
       if (!feeString || feeString.trim() === '') return '';
       let fee = feeString.trim();
@@ -499,9 +481,7 @@
         detectedCurrency = 'CAD';
       }
 
-      // Si la devise n'est pas déjà précisée et qu'on connaît la région
       if (detectedCurrency && !fee.toUpperCase().includes('CAD') && !fee.toUpperCase().includes('USD')) {
-        // Remplace les notations type "$120" par "120 $ CAD" ou ajoute le suffixe
         if (fee.startsWith('$')) {
           fee = fee.substring(1).trim() + ` $ ${detectedCurrency}`;
         } else if (!fee.includes('$')) {
@@ -747,7 +727,6 @@
         const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
         const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région']);
 
-        // Créer les fiches (pour la barre latérale et pour la vue liste pleine largeur)
         const itemCardSidebar = createCardElement(item, index);
         const itemCardFull = createCardElement(item, index);
 
@@ -845,7 +824,6 @@
 
       document.getElementById('lang-btn').textContent = currentLang === 'fr' ? 'EN' : 'FR';
       document.getElementById('txt-site-title').textContent = t.siteTitle;
-      document.getElementById('txt-site-sub').textContent = t.siteSub;
       document.getElementById('txt-credit-dev').textContent = t.creditDev;
       document.getElementById('txt-filter-label').textContent = t.filterLabel;
       document.getElementById('txt-near-me').textContent = t.nearMe;
@@ -876,7 +854,6 @@
       applyFilters();
     }
 
-    // Commutateur de vues : Carte vs Liste vs Calendrier
     const btnMap = document.getElementById('btn-map');
     const btnList = document.getElementById('btn-list');
     const btnCalendar = document.getElementById('btn-calendar');
@@ -913,7 +890,6 @@
     document.getElementById('filter-sensei').addEventListener('change', applyFilters);
     document.getElementById('filter-city').addEventListener('change', applyFilters);
 
-    // Minuteur de sécurité
     const loadTimeout = setTimeout(() => {
       if (!dataLoaded) {
         const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
@@ -922,7 +898,6 @@
       }
     }, 5000);
 
-    // Chargement CSV
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
       download: true,
       header: true,
