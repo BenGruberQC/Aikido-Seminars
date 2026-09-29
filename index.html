@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Séminaires d'Aïkido - Carte & Calendrier</title>
+  <title>Séminaires d'Aïkido - Carte, Liste & Calendrier</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,7 +18,7 @@
 
   <style>
     :root {
-      --primary: #1e293b;
+      --primary: #0f172a;
       --accent: #2563eb;
       --bg: #f8fafc;
       --border: #e2e8f0;
@@ -30,41 +30,41 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
 
-    /* En-tête */
+    /* En-tête clair et institutionnel */
     header {
-      background: var(--primary);
-      color: #fff;
+      background: #ffffff;
+      color: var(--text);
       padding: 10px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-bottom: 1px solid var(--border);
       z-index: 20;
     }
     .header-brand { display: flex; align-items: center; gap: 14px; }
-    .header-title h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
-    .header-title span { font-size: 0.8rem; color: #94a3b8; }
+    .header-title h1 { font-size: 1.1rem; font-weight: 700; color: var(--primary); line-height: 1.2; }
+    .header-title span { font-size: 0.78rem; color: var(--text-muted); }
     .header-right { display: flex; align-items: center; gap: 14px; }
-    .header-credit { text-align: right; font-size: 0.8rem; color: #94a3b8; }
-    .header-credit strong { color: #f1f5f9; }
+    .header-credit { text-align: right; font-size: 0.78rem; color: var(--text-muted); }
+    .header-credit strong { color: var(--primary); }
 
     .lang-btn {
       padding: 5px 10px;
-      border: 1px solid #475569;
-      border-radius: 4px;
-      background: #334155;
-      color: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #f1f5f9;
+      color: var(--text);
       font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
     }
-    .lang-btn:hover { background: #475569; }
+    .lang-btn:hover { background: #e2e8f0; }
 
     /* Barre de filtres */
     #filter-bar {
       background: #fff;
-      padding: 10px 20px;
+      padding: 8px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       gap: 10px;
@@ -121,21 +121,22 @@
     }
     .btn-submit:hover { background: #dbeafe; }
 
-    .view-toggles { display: flex; gap: 6px; }
+    /* Sélecteur de vues 3 boutons */
+    .view-toggles { display: flex; gap: 4px; background: #f1f5f9; padding: 2px; border-radius: 8px; border: 1px solid var(--border); }
     .toggle-btn {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border: none;
       border-radius: 6px;
-      background: #f1f5f9;
+      background: transparent;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       color: var(--text-muted);
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
-    .toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .toggle-btn.active { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-    /* Modal proposition */
+    /* Modale de proposition */
     #modal-proposer {
       display: none;
       position: fixed;
@@ -154,7 +155,7 @@
       padding: 24px;
       position: relative;
     }
-    .modal-close { position: absolute; top: 14px; right: 14px; border: none; background: transparent; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); line-height: 1; }
+    .modal-close { position: absolute; top: 14px; right: 14px; border: none; background: transparent; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
     .option-card {
       display: flex;
       align-items: center;
@@ -168,16 +169,28 @@
       margin-top: 10px;
       transition: all 0.2s;
     }
-    .option-card:hover { border-color: var(--accent); background: #eff6ff; transform: translateY(-1px); }
+    .option-card:hover { border-color: var(--accent); background: #eff6ff; }
 
-    /* Conteneur principal */
+    /* Contenu principal et vues */
     #main-content { flex: 1; position: relative; overflow: hidden; display: flex; }
-    #map-view { display: flex; width: 100%; height: 100%; }
+    
+    #view-map-container { display: flex; width: 100%; height: 100%; }
     #map { flex: 1; height: 100%; z-index: 1; }
-    #sidebar { width: 400px; background: #fff; border-left: 1px solid var(--border); overflow-y: auto; padding: 16px; z-index: 2; }
-    #calendar-view { display: none; width: 100%; height: 100%; background: #fff; padding: 20px; overflow-y: auto; }
+    #desktop-sidebar { width: 380px; background: #fff; border-left: 1px solid var(--border); overflow-y: auto; padding: 16px; z-index: 2; }
 
-    /* Cartes séminaires */
+    #view-list-container {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+    .list-wrapper { max-width: 800px; margin: 0 auto; }
+
+    #view-calendar-container { display: none; width: 100%; height: 100%; background: #fff; padding: 20px; overflow-y: auto; }
+
+    /* Fiches séminaires */
     .card {
       background: #fff;
       border: 1px solid var(--border);
@@ -189,7 +202,7 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       position: relative;
     }
-    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+    .card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.07); }
     .card.reserved-card { border-left: 4px solid var(--reserved); background: #fdfdfe; }
     .card.past-card { opacity: 0.65; background: #f8fafc; }
 
@@ -224,7 +237,6 @@
       gap: 4px;
       cursor: pointer;
       border: 1px solid var(--border);
-      transition: background 0.15s;
     }
     .btn-card-action:hover { background: #e2e8f0; }
 
@@ -234,11 +246,9 @@
     @media (max-width: 850px) {
       header { flex-direction: column; align-items: flex-start; gap: 8px; }
       .header-right { width: 100%; justify-content: space-between; }
-      #map-view { flex-direction: column-reverse; }
-      #sidebar { width: 100%; height: 45%; }
-      #map { height: 55%; }
+      #desktop-sidebar { display: none; } /* En mode carte sur mobile, la carte occupe 100% */
       .action-group { margin-left: 0; width: 100%; justify-content: space-between; }
-      .view-toggles { flex: 1; }
+      .view-toggles { width: 100%; }
       .toggle-btn { flex: 1; text-align: center; }
     }
   </style>
@@ -248,29 +258,28 @@
   <!-- En-tête -->
   <header>
     <div class="header-brand">
-      <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 4px 10px; border-radius: 6px;">
-        <svg width="36" height="36" viewBox="0 0 100 100" style="display: block;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="32" height="32" viewBox="0 0 100 100" style="display: block;">
           <circle cx="50" cy="50" r="48" fill="#e11d48"/>
           <path d="M 50 14 L 54 26 L 63 22 L 61 34 L 74 33 L 70 42 L 84 48 L 72 58 L 76 66 L 62 64 L 59 74 L 53 71 L 52 86 L 48 86 L 47 71 L 41 74 L 38 64 L 24 66 L 28 58 L 16 48 L 30 42 L 26 33 L 39 34 L 37 22 L 46 26 Z" fill="#ffffff"/>
           <text x="50" y="44" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">合</text>
           <text x="50" y="58" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">氣</text>
           <text x="50" y="72" font-size="14" font-weight="bold" fill="#1e293b" text-anchor="middle" font-family="serif">道</text>
         </svg>
-        <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.15;">
-          <span style="font-size: 0.78rem; font-weight: 700; color: #0f172a;">Canadian Aikido Federation</span>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #334155;">Fédération Canadienne d'Aïkido</span>
+        <div style="line-height: 1.15;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #0f172a;">Canadian Aikido Federation</div>
+          <div style="font-size: 0.74rem; font-weight: 500; color: #475569;">Fédération Canadienne d'Aïkido</div>
         </div>
       </div>
       <div class="header-title">
         <h1 id="txt-site-title">Séminaires d'Aïkido</h1>
-        <span id="txt-site-sub">Portail National & Calendrier des Stages</span>
+        <span id="txt-site-sub">Portail Web interactif • Calendrier national des stages</span>
       </div>
     </div>
 
     <div class="header-right">
       <div class="header-credit">
-        <span id="txt-credit-dev">Développé par</span> <strong>BenGruberQC</strong><br>
-        CAF / FCA
+        <span id="txt-credit-dev">Développé par</span> <strong>BenGruberQC</strong>
       </div>
       <button id="lang-btn" class="lang-btn" onclick="toggleLanguage()">EN</button>
     </div>
@@ -308,7 +317,7 @@
     <label><strong id="txt-filter-label">Filtrer :</strong></label>
     <select id="filter-month"><option value="ALL">Tous les mois</option></select>
     <select id="filter-sensei"><option value="ALL">Tous les intervenants</option></select>
-    <select id="filter-city"><option value="ALL">Toutes les régions / villes</option></select>
+    <select id="filter-city"><option value="ALL">Toutes régions / villes</option></select>
 
     <!-- Géolocalisation -->
     <button id="btn-near-me" class="btn-geo" onclick="toggleGeolocation()">
@@ -331,8 +340,10 @@
         ➕ Proposer
       </button>
 
+      <!-- Sélecteur à 3 boutons -->
       <div class="view-toggles">
         <button id="btn-map" class="toggle-btn active">🗺️ Carte</button>
+        <button id="btn-list" class="toggle-btn">📋 Liste</button>
         <button id="btn-calendar" class="toggle-btn">📅 Calendrier</button>
       </div>
     </div>
@@ -340,27 +351,51 @@
 
   <!-- Contenu -->
   <div id="main-content">
-    <div id="map-view">
+    
+    <!-- VUE CARTE -->
+    <div id="view-map-container">
       <div id="map"></div>
-      <div id="sidebar">
-        <h2 id="txt-sidebar-title" style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires</h2>
-        <div id="seminar-list">Chargement des données...</div>
+      <div id="desktop-sidebar">
+        <h2 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires</h2>
+        <div id="sidebar-seminar-list">Chargement des données...</div>
       </div>
     </div>
 
-    <div id="calendar-view">
+    <!-- VUE LISTE (100% de largeur) -->
+    <div id="view-list-container">
+      <div class="list-wrapper">
+        <h2 id="txt-full-list-title" style="font-size: 1.1rem; color: var(--primary); margin-bottom: 16px;">Séminaires au programme</h2>
+        <div id="full-seminar-list">Chargement des données...</div>
+      </div>
+    </div>
+
+    <!-- VUE CALENDRIER -->
+    <div id="view-calendar-container">
       <div id="calendar"></div>
     </div>
+
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
 
+    const US_STATES = new Set([
+      'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+      'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+      'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+      'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+      'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+    ]);
+
+    const CA_PROVINCES = new Set([
+      'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'
+    ]);
+
     const i18n = {
       fr: {
         siteTitle: "Séminaires d'Aïkido",
-        siteSub: "Portail National & Calendrier des Stages",
+        siteSub: "Portail Web interactif • Calendrier national des stages",
         creditDev: "Développé par",
         filterLabel: "Filtrer :",
         allMonths: "Tous les mois",
@@ -370,9 +405,10 @@
         archivesLabel: "Inclure les archives",
         btnSubmit: "➕ Proposer",
         btnMap: "🗺️ Carte",
+        btnList: "📋 Liste",
         btnCal: "📅 Calendrier",
-        sidebarTitle: "Séminaires",
-        noSeminar: "Aucun stage ne correspond aux critères.",
+        fullListTitle: "Séminaires au programme",
+        noSeminar: "Aucun stage ne correspond aux critères sélectionnés.",
         loading: "Chargement des séminaires...",
         errorLoading: "⚠️ Impossible de charger les données du Google Sheet. Veuillez rafraîchir la page ou réessayer ultérieurement.",
         modalTitle: "Proposer un séminaire",
@@ -396,7 +432,7 @@
       },
       en: {
         siteTitle: "Aikido Seminars",
-        siteSub: "National Portal & Seminar Calendar",
+        siteSub: "Interactive Web Portal • National Seminar Calendar",
         creditDev: "Developed by",
         filterLabel: "Filter:",
         allMonths: "All months",
@@ -406,8 +442,9 @@
         archivesLabel: "Include past events",
         btnSubmit: "➕ Submit",
         btnMap: "🗺️ Map",
+        btnList: "📋 List",
         btnCal: "📅 Calendar",
-        sidebarTitle: "Seminars",
+        fullListTitle: "Upcoming Seminars",
         noSeminar: "No seminars match the selected criteria.",
         loading: "Loading seminars...",
         errorLoading: "⚠️ Unable to load Google Sheet data. Please refresh or try again later.",
@@ -440,13 +477,42 @@
     let calendar = null;
     let dataLoaded = false;
 
-    // Initialisation Leaflet
+    // Initialisation Carte Leaflet
     const map = L.map('map').setView([45.5125, -73.5807], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     }).addTo(map);
     markersLayer.addTo(map);
+
+    // Formatage intelligent des devises CAD / USD
+    function formatFeeWithCurrency(feeString, provinceOrState) {
+      if (!feeString || feeString.trim() === '') return '';
+      let fee = feeString.trim();
+
+      const region = (provinceOrState || '').trim().toUpperCase();
+      let detectedCurrency = '';
+
+      if (US_STATES.has(region)) {
+        detectedCurrency = 'USD';
+      } else if (CA_PROVINCES.has(region)) {
+        detectedCurrency = 'CAD';
+      }
+
+      // Si la devise n'est pas déjà précisée et qu'on connaît la région
+      if (detectedCurrency && !fee.toUpperCase().includes('CAD') && !fee.toUpperCase().includes('USD')) {
+        // Remplace les notations type "$120" par "120 $ CAD" ou ajoute le suffixe
+        if (fee.startsWith('$')) {
+          fee = fee.substring(1).trim() + ` $ ${detectedCurrency}`;
+        } else if (!fee.includes('$')) {
+          fee = fee + ` $ ${detectedCurrency}`;
+        } else {
+          fee = fee + ` ${detectedCurrency}`;
+        }
+      }
+
+      return fee;
+    }
 
     function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
@@ -501,7 +567,7 @@
         applyFilters();
       } else {
         if (!navigator.geolocation) {
-          alert(currentLang === 'fr' ? "Géolocalisation non supportée par votre navigateur." : "Geolocation not supported by your browser.");
+          alert(currentLang === 'fr' ? "Géolocalisation non supportée." : "Geolocation not supported.");
           return;
         }
         navigator.geolocation.getCurrentPosition(
@@ -511,7 +577,7 @@
             radiusSelect.style.display = 'inline-block';
             applyFilters();
           },
-          err => {
+          () => {
             alert(currentLang === 'fr' ? "Impossible de récupérer votre position." : "Unable to retrieve your location.");
           }
         );
@@ -600,11 +666,47 @@
       if (Array.from(citySelect.options).some(o => o.value === savedCity)) citySelect.value = savedCity;
     }
 
+    function createCardElement(item, index) {
+      const t = i18n[currentLang];
+      const isPast = isSeminarPast(item['Date Fin']);
+      const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+      const idEvent = item['ID Événement'] || `seminar-${index}`;
+      const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région']);
+      const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
+
+      const card = document.createElement('div');
+      card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`;
+      card.id = `card-${idEvent}`;
+
+      card.innerHTML = `
+        <div class="badge-container">
+          <span class="badge ${isReserved ? 'badge-reserved' : ''}">${isReserved ? t.badgeReserved : (item['Courant / Affiliation'] || 'Aïkido')}</span>
+          ${isUniversal ? `<span class="badge badge-open">${t.badgeOpen}</span>` : ''}
+          ${isPast ? `<span class="badge badge-past">${t.badgePast}</span>` : ''}
+        </div>
+        <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
+        <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
+        <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}</div>
+        <div class="card-meta">📍 ${item['Dojo Hôte']} (${[item['Ville'], item['Province / Région']].filter(Boolean).join(', ')})</div>
+        ${!isReserved ? `<div class="card-price">💰 ${feeFormatted || t.feeTBD}</div>` : ''}
+        
+        <div class="card-actions">
+          <button class="btn-card-action" onclick="copySeminarLink('${idEvent}')">${t.labelShare}</button>
+          <a class="btn-card-action" href="${formatGoogleCalendarUrl(item)}" target="_blank">${t.labelCalGoogle}</a>
+          ${item['Lien Inscription / Web'] ? `<a class="btn-card-action" href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent);">${t.labelLink}</a>` : ''}
+        </div>
+      `;
+
+      return { card, idEvent };
+    }
+
     function renderView(items) {
       markersLayer.clearLayers();
       markersMap = {};
-      const listContainer = document.getElementById('seminar-list');
-      listContainer.innerHTML = '';
+      const sidebarContainer = document.getElementById('sidebar-seminar-list');
+      const fullListContainer = document.getElementById('full-seminar-list');
+      sidebarContainer.innerHTML = '';
+      fullListContainer.innerHTML = '';
       const t = i18n[currentLang];
 
       if (calendar) {
@@ -629,7 +731,8 @@
       }
 
       if (items.length === 0) {
-        listContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">${t.noSeminar}</p>`;
+        sidebarContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">${t.noSeminar}</p>`;
+        fullListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">${t.noSeminar}</p>`;
         return;
       }
 
@@ -642,7 +745,11 @@
         const lng = parseFloat(rawLng);
         const isPast = isSeminarPast(item['Date Fin']);
         const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
-        const idEvent = item['ID Événement'] || `seminar-${index}`;
+        const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région']);
+
+        // Créer les fiches (pour la barre latérale et pour la vue liste pleine largeur)
+        const itemCardSidebar = createCardElement(item, index);
+        const itemCardFull = createCardElement(item, index);
 
         if (!isNaN(lat) && !isNaN(lng)) {
           bounds.push([lat, lng]);
@@ -656,7 +763,7 @@
           });
 
           const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
-          markersMap[idEvent] = { marker, lat, lng };
+          markersMap[itemCardSidebar.idEvent] = { marker, lat, lng };
 
           marker.bindPopup(`
             <div class="popup-content">
@@ -664,43 +771,19 @@
               <em>${item['Intervenant (Sensei)'] || ''}</em><br>
               📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}<br>
               📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})<br>
-              ${isReserved ? `<strong>${t.badgeReserved}</strong>` : (item['Tarif Complet'] ? `💰 ${item['Tarif Complet']}` : '')}
+              ${isReserved ? `<strong>${t.badgeReserved}</strong>` : (feeFormatted ? `💰 ${feeFormatted}` : '')}
             </div>
           `);
 
-          const card = document.createElement('div');
-          card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`;
-          card.id = `card-${idEvent}`;
-
-          const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
-
-          card.innerHTML = `
-            <div class="badge-container">
-              <span class="badge ${isReserved ? 'badge-reserved' : ''}">${isReserved ? t.badgeReserved : (item['Courant / Affiliation'] || 'Aïkido')}</span>
-              ${isUniversal ? `<span class="badge badge-open">${t.badgeOpen}</span>` : ''}
-              ${isPast ? `<span class="badge badge-past">${t.badgePast}</span>` : ''}
-            </div>
-            <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
-            <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
-            <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}</div>
-            <div class="card-meta">📍 ${item['Dojo Hôte']} (${[item['Ville'], item['Province / Région']].filter(Boolean).join(', ')})</div>
-            ${!isReserved ? `<div class="card-price">💰 ${item['Tarif Complet'] || t.feeTBD}</div>` : ''}
-            
-            <div class="card-actions">
-              <button class="btn-card-action" onclick="copySeminarLink('${idEvent}')">${t.labelShare}</button>
-              <a class="btn-card-action" href="${formatGoogleCalendarUrl(item)}" target="_blank">${t.labelCalGoogle}</a>
-              ${item['Lien Inscription / Web'] ? `<a class="btn-card-action" href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent);">${t.labelLink}</a>` : ''}
-            </div>
-          `;
-
-          card.onclick = (e) => {
+          itemCardSidebar.card.onclick = (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
             map.flyTo([lat, lng], 13);
             marker.openPopup();
           };
-
-          listContainer.appendChild(card);
         }
+
+        sidebarContainer.appendChild(itemCardSidebar.card);
+        fullListContainer.appendChild(itemCardFull.card);
       });
 
       if (bounds.length > 0 && !window.location.hash) {
@@ -712,8 +795,6 @@
         if (markersMap[hashId]) {
           map.flyTo([markersMap[hashId].lat, markersMap[hashId].lng], 14);
           markersMap[hashId].marker.openPopup();
-          const targetCard = document.getElementById(`card-${hashId}`);
-          if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth' });
         }
       }
     }
@@ -771,8 +852,9 @@
       document.getElementById('txt-archives-label').textContent = t.archivesLabel;
       document.getElementById('btn-submit-action').textContent = t.btnSubmit;
       document.getElementById('btn-map').textContent = t.btnMap;
+      document.getElementById('btn-list').textContent = t.btnList;
       document.getElementById('btn-calendar').textContent = t.btnCal;
-      document.getElementById('txt-sidebar-title').textContent = t.sidebarTitle;
+      document.getElementById('txt-full-list-title').textContent = t.fullListTitle;
 
       document.getElementById('txt-modal-title').textContent = t.modalTitle;
       document.getElementById('txt-modal-desc').textContent = t.modalDesc;
@@ -794,25 +876,34 @@
       applyFilters();
     }
 
-    // Commutation Carte / Calendrier
+    // Commutateur de vues : Carte vs Liste vs Calendrier
     const btnMap = document.getElementById('btn-map');
+    const btnList = document.getElementById('btn-list');
     const btnCalendar = document.getElementById('btn-calendar');
-    const mapView = document.getElementById('map-view');
-    const calView = document.getElementById('calendar-view');
+
+    const viewMap = document.getElementById('view-map-container');
+    const viewList = document.getElementById('view-list-container');
+    const viewCal = document.getElementById('view-calendar-container');
+
+    function setActiveView(activeBtn, showContainer) {
+      [btnMap, btnList, btnCalendar].forEach(b => b.classList.remove('active'));
+      [viewMap, viewList, viewCal].forEach(v => v.style.display = 'none');
+
+      activeBtn.classList.add('active');
+      showContainer.style.display = (showContainer === viewMap) ? 'flex' : 'block';
+    }
 
     btnMap.addEventListener('click', () => {
-      btnMap.classList.add('active');
-      btnCalendar.classList.remove('active');
-      mapView.style.display = 'flex';
-      calView.style.display = 'none';
+      setActiveView(btnMap, viewMap);
       map.invalidateSize();
     });
 
+    btnList.addEventListener('click', () => {
+      setActiveView(btnList, viewList);
+    });
+
     btnCalendar.addEventListener('click', () => {
-      btnCalendar.classList.add('active');
-      btnMap.classList.remove('active');
-      mapView.style.display = 'none';
-      calView.style.display = 'block';
+      setActiveView(btnCalendar, viewCal);
       if (!calendar) initCalendar();
       calendar.updateSize();
       applyFilters();
@@ -822,14 +913,16 @@
     document.getElementById('filter-sensei').addEventListener('change', applyFilters);
     document.getElementById('filter-city').addEventListener('change', applyFilters);
 
-    // Minuteur de sécurité (5 secondes)
+    // Minuteur de sécurité
     const loadTimeout = setTimeout(() => {
       if (!dataLoaded) {
-        document.getElementById('seminar-list').innerHTML = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+        const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+        document.getElementById('sidebar-seminar-list').innerHTML = err;
+        document.getElementById('full-seminar-list').innerHTML = err;
       }
     }, 5000);
 
-    // Lecture du CSV
+    // Chargement CSV
     Papa.parse(GOOGLE_SHEET_CSV_URL, {
       download: true,
       header: true,
@@ -848,7 +941,9 @@
       error: function() {
         dataLoaded = true;
         clearTimeout(loadTimeout);
-        document.getElementById('seminar-list').innerHTML = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+        const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+        document.getElementById('sidebar-seminar-list').innerHTML = err;
+        document.getElementById('full-seminar-list').innerHTML = err;
       }
     });
   </script>
