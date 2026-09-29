@@ -30,7 +30,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: flex; flex-direction: column; height: 100vh; }
 
-    /* En-tête épuré */
+    /* En-tête */
     header {
       background: #ffffff;
       color: var(--text);
@@ -430,7 +430,7 @@
         fullListTitle: "Upcoming Seminars",
         noSeminar: "No seminars match the selected criteria.",
         loading: "Loading seminars...",
-        errorLoading: "⚠️ Unable to load Google Sheet data. Please refresh or try again later.",
+        errorLoading: "⚠️️ Unable to load Google Sheet data. Please refresh or try again later.",
         modalTitle: "Submit a Seminar",
         modalDesc: "Select your preferred transmission method:",
         formTitle: "Fill out the online form",
@@ -468,26 +468,41 @@
     }).addTo(map);
     markersLayer.addTo(map);
 
-    function formatFeeWithCurrency(feeString, provinceOrState) {
+    // Détection de devise selon la région et l'adresse civique
+    function formatFeeWithCurrency(feeString, provinceOrState, fullAddress) {
       if (!feeString || feeString.trim() === '') return '';
       let fee = feeString.trim();
 
-      const region = (provinceOrState || '').trim().toUpperCase();
-      let detectedCurrency = '';
-
-      if (US_STATES.has(region)) {
-        detectedCurrency = 'USD';
-      } else if (CA_PROVINCES.has(region)) {
-        detectedCurrency = 'CAD';
+      if (fee.toUpperCase().includes('CAD') || fee.toUpperCase().includes('USD')) {
+        return fee;
       }
 
-      if (detectedCurrency && !fee.toUpperCase().includes('CAD') && !fee.toUpperCase().includes('USD')) {
+      const region = (provinceOrState || '').trim().toUpperCase();
+      const address = (fullAddress || '').trim().toUpperCase();
+
+      const isCanada = CA_PROVINCES.has(region) || 
+                       address.includes('CANADA') || 
+                       /\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/.test(address);
+
+      const isUSA = US_STATES.has(region) || 
+                    address.includes('USA') || 
+                    address.includes('UNITED STATES') || 
+                    /\b\d{5}(-\d{4})?\b/.test(address);
+
+      let currencySuffix = '';
+      if (isCanada) {
+        currencySuffix = 'CAD';
+      } else if (isUSA) {
+        currencySuffix = 'USD';
+      }
+
+      if (currencySuffix) {
         if (fee.startsWith('$')) {
-          fee = fee.substring(1).trim() + ` $ ${detectedCurrency}`;
-        } else if (!fee.includes('$')) {
-          fee = fee + ` $ ${detectedCurrency}`;
+          fee = fee.substring(1).trim() + ` $ ${currencySuffix}`;
+        } else if (fee.includes('$')) {
+          fee = fee.replace('$', '').trim() + ` $ ${currencySuffix}`;
         } else {
-          fee = fee + ` ${detectedCurrency}`;
+          fee = fee + ` $ ${currencySuffix}`;
         }
       }
 
@@ -651,7 +666,7 @@
       const isPast = isSeminarPast(item['Date Fin']);
       const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
       const idEvent = item['ID Événement'] || `seminar-${index}`;
-      const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région']);
+      const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
       const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
 
       const card = document.createElement('div');
@@ -725,7 +740,7 @@
         const lng = parseFloat(rawLng);
         const isPast = isSeminarPast(item['Date Fin']);
         const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
-        const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région']);
+        const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
 
         const itemCardSidebar = createCardElement(item, index);
         const itemCardFull = createCardElement(item, index);
