@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portail des Stages d'Aïkido</title>
+  <title>Carte et Calendrier des Stages d'Aïkido</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,256 +12,132 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" />
 
   <style>
-    :root {
-      --color-current: #e53935; /* Mois en cours - Rouge */
-      --color-near: #fb8c00;    /* 1 à 3 mois - Orange */
-      --color-mid: #fbc02d;     /* 4 à 6 mois - Jaune */
-      --color-far: #43a047;     /* 7+ mois - Vert */
-      --color-past: #757575;    /* Passé - Gris */
-    }
-
     body {
       margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f8fafc;
-      color: #1e293b;
-    }
-
-    header {
-      padding: 16px 24px;
-      background: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 1.3rem;
-      font-weight: 700;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .counter-badge {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      padding: 6px 12px;
-      border-radius: 9999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .legend {
-      display: flex;
-      gap: 12px;
-      font-size: 0.8rem;
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .legend-bullet {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
       padding: 20px;
-      max-width: 1400px;
-      margin: 0 auto;
+      font-family: sans-serif;
     }
 
     #map {
-      height: 480px;
+      height: 500px;
       width: 100%;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+      border-radius: 6px;
     }
 
-    #calendar-card {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    #calendar {
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
-    /* Styles Leaflet Popup */
-    .leaflet-popup-content h3 {
-      margin: 0 0 6px 0;
-      font-size: 1rem;
-      color: #0f172a;
-    }
-    .leaflet-popup-content p {
-      margin: 4px 0;
-      font-size: 0.85rem;
-      line-height: 1.4;
-    }
-
-    /* Style personnalisés pour FullCalendar */
-    .fc-event {
-      cursor: pointer;
-      border-radius: 4px;
-      padding: 2px 4px;
-      font-size: 0.85rem;
+    .custom-pin svg {
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Registre des Stages d'Aïkido</h1>
-    <div class="header-right">
-      <div class="legend">
-        <div class="legend-item"><span class="legend-bullet" style="background: var(--color-current);"></span> Ce mois-ci</div>
-        <div class="legend-item"><span class="legend-bullet" style="background: var(--color-near);"></span> 1 - 3 mois</div>
-        <div class="legend-item"><span class="legend-bullet" style="background: var(--color-mid);"></span> 4 - 6 mois</div>
-        <div class="legend-item"><span class="legend-bullet" style="background: var(--color-far);"></span> 7+ mois</div>
-      </div>
-      <div class="counter-badge">
-        👁️ Visites : <span id="visit-count">Chargement...</span>
-      </div>
-    </div>
-  </header>
+  <div id="map"></div>
+  <div id="calendar"></div>
 
-  <div class="container">
-    <div id="map"></div>
-    <div id="calendar-card">
-      <div id="calendar"></div>
-    </div>
-  </div>
-
-  <!-- Bibliothèques JS -->
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+  <!-- PapaParse pour lire le CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <script>
-    // URL de publication CSV de votre Google Sheet
+    // Remplacez cette URL par votre lien d'export CSV Google Sheets
     const GOOGLE_SHEET_CSV_URL = "VOTRE_LIEN_GOOGLE_SHEET_CSV_ICI";
 
-    // 1. COMPTEUR DE VISITES (via counterapi.dev)
-    async function initVisitorCounter() {
-      const counterEl = document.getElementById("visit-count");
-      try {
-        // Remplacez 'aikido-registry-project' par un identifiant unique à votre site
-        const res = await fetch("https://api.counterapi.dev/v1/aikido-registry-project/visitors/up");
-        if (res.ok) {
-          const data = await res.json();
-          counterEl.textContent = data.count.toLocaleString("fr-FR");
-        } else {
-          counterEl.textContent = "Indisponible";
-        }
-      } catch (e) {
-        counterEl.textContent = "Actif";
-      }
-    }
-
-    // 2. FONCTION DE CALCUL DU CODE COULEUR TEMPOREL
-    function getTemporalStatus(startDateStr) {
-      if (!startDateStr) return { color: "#757575", text: "Date inconnue" };
+    // 1. Calcul de la couleur selon l'échéance par rapport à aujourd'hui
+    function getStageColor(startDateStr) {
+      if (!startDateStr) return "#757575"; // Gris par défaut si pas de date
 
       const now = new Date();
       const target = new Date(startDateStr);
 
-      if (isNaN(target.getTime())) return { color: "#757575", text: "Date invalide" };
+      if (isNaN(target.getTime())) return "#757575";
 
-      // Différence en mois absolus
+      // Écart en mois
       const monthDiff = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
 
-      // Même mois et même année
+      // Mois en cours
       if (monthDiff === 0 && target >= new Date(now.getFullYear(), now.getMonth(), 1)) {
-        return { color: "#e53935", textColor: "#ffffff", label: "Ce mois-ci" }; // Rouge
-      } 
-      // Événement dépassé
-      if (target < new Date(now.getFullYear(), now.getMonth(), 1) && monthDiff < 0) {
-        return { color: "#757575", textColor: "#ffffff", label: "Passé" }; // Gris
+        return "#e53935"; // Rouge
+      }
+      // Stage passé
+      if (monthDiff < 0) {
+        return "#757575"; // Gris
       }
       // Dans 1 à 3 mois
       if (monthDiff >= 1 && monthDiff <= 3) {
-        return { color: "#fb8c00", textColor: "#ffffff", label: "1 - 3 mois" }; // Orange
+        return "#fb8c00"; // Orange
       }
       // Dans 4 à 6 mois
       if (monthDiff >= 4 && monthDiff <= 6) {
-        return { color: "#fbc02d", textColor: "#000000", label: "4 - 6 mois" }; // Jaune
+        return "#fbc02d"; // Jaune
       }
       // Au-delà (7 mois et plus)
-      return { color: "#43a047", textColor: "#ffffff", label: "Plus tard" }; // Vert
+      return "#43a047";   // Vert
     }
 
-    // 3. GÉNÉRATEUR DE PIN LEAFLET SVG PERSONNALISÉ
-    function createColorMarkerIcon(color) {
-      const svgIcon = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="28" height="42">
+    // 2. Génération d'une icône Leaflet SVG colorée
+    function getMarkerIcon(color) {
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="26" height="38">
           <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24s12-15 12-24c0-6.63-5.37-12-12-12z" fill="${color}" stroke="#ffffff" stroke-width="1.5"/>
-          <circle cx="12" cy="12" r="5" fill="#ffffff" />
+          <circle cx="12" cy="12" r="4.5" fill="#ffffff"/>
         </svg>`;
-      
+
       return L.divIcon({
         className: 'custom-pin',
-        html: svgIcon,
-        iconSize: [28, 42],
-        iconAnchor: [14, 42],
-        popupAnchor: [0, -38]
+        html: svg,
+        iconSize: [26, 38],
+        iconAnchor: [13, 38],
+        popupAnchor: [0, -34]
       });
     }
 
-    // 4. INITIALISATION CARTE & CALENDRIER
-    document.addEventListener("DOMContentLoaded", () => {
-      initVisitorCounter();
-
-      const map = L.map("map").setView([46.603354, 1.888334], 4);
+    document.addEventListener("DOMContentLoaded", function () {
+      // Initialisation de la carte
+      const map = L.map("map").setView([46.603354, 1.888334], 5);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
+      // Initialisation du calendrier
       const calendarEl = document.getElementById("calendar");
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "dayGridMonth",
+        locale: "fr",
         headerToolbar: {
           left: "prev,next today",
           center: "title",
           right: "dayGridMonth,timeGridWeek,listMonth"
         },
-        locale: "fr",
         events: []
       });
       calendar.render();
 
-      // 5. CHARGEMENT DU FICHIER CSV VIA PAPAPARSE
+      // Récupération et parsing du CSV
       Papa.parse(GOOGLE_SHEET_CSV_URL, {
         download: true,
         header: true,
         skipEmptyLines: true,
-        complete: function(results) {
+        complete: function (results) {
           const events = [];
-          const mapBounds = [];
+          const validBounds = [];
 
-          results.data.forEach(row => {
-            // Nettoyage des colonnes
+          results.data.forEach(function (row) {
             const id = row["ID Événement"] || row["ID"] || "";
             const title = row["Titre du séminaire"] || row["Titre"] || "Stage Aïkido";
             const sensei = row["Intervenant (Sensei)"] || row["Sensei"] || "";
             const grade = row["Titre / Grade"] || row["Grade"] || "";
-            const locationName = row["Dojo Hôte"] || "";
+            const hostDojo = row["Dojo Hôte"] || "";
             const city = row["Ville"] || "";
             const startDate = row["Date Début"] || "";
             const endDate = row["Date Fin"] || startDate;
@@ -270,10 +146,10 @@
 
             if (!startDate) return;
 
-            // Statut de couleur
-            const status = getTemporalStatus(startDate);
+            // Détermination de la couleur selon la date
+            const color = getStageColor(startDate);
 
-            // Coordonnées GPS avec validation rigide
+            // Validation stricte des coordonnées GPS
             const rawLat = (row["Latitude"] || "").toString().trim().replace(",", ".");
             const rawLng = (row["Longitude"] || "").toString().trim().replace(",", ".");
             const lat = parseFloat(rawLat);
@@ -283,23 +159,23 @@
 
             if (hasValidCoords) {
               const marker = L.marker([lat, lng], {
-                icon: createColorMarkerIcon(status.color)
+                icon: getMarkerIcon(color)
               }).addTo(map);
 
               marker.bindPopup(`
-                <h3>${title}</h3>
-                <p><strong>Sensei :</strong> ${sensei} ${grade ? `(${grade})` : ""}</p>
-                <p><strong>Lieu :</strong> ${locationName ? locationName + ', ' : ''}${city}</p>
-                <p><strong>Dates :</strong> Du ${startDate} au ${endDate}</p>
-                ${pricing ? `<p><strong>Tarif :</strong> ${pricing}</p>` : ""}
-                ${address ? `<p><small>${address}</small></p>` : ""}
+                <strong>${title}</strong><br>
+                ${sensei ? `Sensei : ${sensei}${grade ? `(${grade})` : ""}<br>` : ""}
+                ${hostDojo ? `Dojo : ${hostDojo}<br>` : ""}
+                ${city ? `Ville : ${city}<br>` : ""}
+                Dates : du ${startDate} au ${endDate}<br>
+                ${pricing ? `Tarif : ${pricing}<br>` : ""}
+                ${address ? `<small>${address}</small>` : ""}
               `);
 
-              mapBounds.push([lat, lng]);
+              validBounds.push([lat, lng]);
             }
 
-            // Événement FullCalendar
-            // Note : pour un affichage journée complète inclusif, FullCalendar requiert un end exclusive
+            // Calcul de la date de fin inclusive pour FullCalendar
             let adjustedEnd = endDate;
             if (endDate) {
               const d = new Date(endDate);
@@ -307,32 +183,29 @@
               adjustedEnd = d.toISOString().split("T")[0];
             }
 
+            // Ajout au tableau d'événements avec gestion du contraste du texte
             events.push({
               id: id,
-              title: `${sensei ? sensei + ' - ' : ''}${title}`,
+              title: `${sensei ? sensei + " - " : ""}${title}`,
               start: startDate,
               end: adjustedEnd,
-              backgroundColor: status.color,
-              borderColor: status.color,
-              textColor: status.textColor,
-              extendedProps: {
-                location: `${locationName} ${city}`,
-                address: address
-              }
+              backgroundColor: color,
+              borderColor: color,
+              textColor: (color === "#fbc02d") ? "#000000" : "#ffffff"
             });
           });
 
-          // Injecter les événements dans le calendrier
+          // Mise à jour du calendrier
           calendar.removeAllEvents();
           events.forEach(e => calendar.addEvent(e));
 
-          // Ajuster la vue de la carte à tous les marqueurs valides
-          if (mapBounds.length > 0) {
-            map.fitBounds(mapBounds, { padding: [40, 40] });
+          // Ajustement de la vue carte si des points sont trouvés
+          if (validBounds.length > 0) {
+            map.fitBounds(validBounds, { padding: [30, 30] });
           }
         },
-        error: function(err) {
-          console.error("Erreur d'importation CSV :", err);
+        error: function (err) {
+          console.error("Erreur lors de la lecture du CSV :", err);
         }
       });
     });
