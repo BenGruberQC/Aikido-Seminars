@@ -201,10 +201,11 @@
       transition: all 0.2s ease;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       position: relative;
+      border-left: 5px solid var(--accent);
     }
     .card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.07); }
-    .card.reserved-card { border-left: 4px solid var(--reserved); background: #fdfdfe; }
-    .card.past-card { opacity: 0.65; background: #f8fafc; }
+    .card.reserved-card { border-left-color: var(--reserved) !important; background: #fdfdfe; }
+    .card.past-card { opacity: 0.65; background: #f8fafc; border-left-color: #94a3b8 !important; }
 
     .badge-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
     .badge {
@@ -218,6 +219,7 @@
     .badge.badge-open { background: #ecfdf5; color: #047857; }
     .badge.badge-reserved { background: #f1f5f9; color: #475569; }
     .badge.badge-past { background: #e2e8f0; color: #64748b; }
+    .badge.badge-delay { color: #fff; }
 
     .card h3 { font-size: 1rem; color: var(--primary); margin-bottom: 6px; }
     .card-meta { font-size: 0.85rem; color: var(--text-muted); margin: 3px 0; }
@@ -412,7 +414,11 @@
         calLocale: "fr",
         calToday: "Aujourd'hui",
         calMonth: "Mois",
-        calList: "Agenda"
+        calList: "Agenda",
+        badgeThisMonth: "Ce mois-ci",
+        badge1to3: "1 à 3 mois",
+        badge4to6: "4 à 6 mois",
+        badge7plus: "7 mois +"
       },
       en: {
         siteTitle: "Aikido Seminars",
@@ -430,7 +436,7 @@
         fullListTitle: "Upcoming Seminars",
         noSeminar: "No seminars match the selected criteria.",
         loading: "Loading seminars...",
-        errorLoading: "⚠️️ Unable to load Google Sheet data. Please refresh or try again later.",
+        errorLoading: "⚠️ Unable to load Google Sheet data. Please refresh or try again later.",
         modalTitle: "Submit a Seminar",
         modalDesc: "Select your preferred transmission method:",
         formTitle: "Fill out the online form",
@@ -448,7 +454,11 @@
         calLocale: "en",
         calToday: "Today",
         calMonth: "Month",
-        calList: "List"
+        calList: "List",
+        badgeThisMonth: "This month",
+        badge1to3: "1 to 3 months",
+        badge4to6: "4 to 6 months",
+        badge7plus: "7+ months"
       }
     };
 
@@ -467,6 +477,30 @@
       attribution: '© OpenStreetMap'
     }).addTo(map);
     markersLayer.addTo(map);
+
+    // Fonction de calcul de la couleur selon l'échéance
+    function getStageTimelineInfo(startDateStr, isPast, isReserved) {
+      if (isPast) return { color: '#94a3b8', textColor: '#ffffff', key: 'badgePast' };
+      if (isReserved) return { color: '#64748b', textColor: '#ffffff', key: 'badgeReserved' };
+      if (!startDateStr) return { color: '#2563eb', textColor: '#ffffff', key: null };
+
+      const now = new Date();
+      const target = new Date(startDateStr);
+      if (isNaN(target.getTime())) return { color: '#2563eb', textColor: '#ffffff', key: null };
+
+      const monthDiff = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+
+      if (monthDiff <= 0) {
+        return { color: '#e53935', textColor: '#ffffff', key: 'badgeThisMonth' }; // Rouge (mois courant)
+      }
+      if (monthDiff >= 1 && monthDiff <= 3) {
+        return { color: '#fb8c00', textColor: '#ffffff', key: 'badge1to3' };      // Orange (1 à 3 mois)
+      }
+      if (monthDiff >= 4 && monthDiff <= 6) {
+        return { color: '#eab308', textColor: '#000000', key: 'badge4to6' };      // Jaune (4 à 6 mois)
+      }
+      return { color: '#16a34a', textColor: '#ffffff', key: 'badge7plus' };        // Vert (au-delà)
+    }
 
     // Détection de devise selon la région et l'adresse civique
     function formatFeeWithCurrency(feeString, provinceOrState, fullAddress) {
@@ -665,6 +699,7 @@
       const t = i18n[currentLang];
       const isPast = isSeminarPast(item['Date Fin']);
       const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+      const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
       const idEvent = item['ID Événement'] || `seminar-${index}`;
       const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
       const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
@@ -672,10 +707,14 @@
       const card = document.createElement('div');
       card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`;
       card.id = `card-${idEvent}`;
+      card.style.borderLeftColor = timeline.color;
+
+      const delayBadgeText = (timeline.key && t[timeline.key]) ? t[timeline.key] : null;
 
       card.innerHTML = `
         <div class="badge-container">
           <span class="badge ${isReserved ? 'badge-reserved' : ''}">${isReserved ? t.badgeReserved : (item['Courant / Affiliation'] || 'Aïkido')}</span>
+          ${delayBadgeText && !isPast && !isReserved ? `<span class="badge badge-delay" style="background:${timeline.color}; color:${timeline.textColor};">${delayBadgeText}</span>` : ''}
           ${isUniversal ? `<span class="badge badge-open">${t.badgeOpen}</span>` : ''}
           ${isPast ? `<span class="badge badge-past">${t.badgePast}</span>` : ''}
         </div>
@@ -713,12 +752,17 @@
             d.setDate(d.getDate() + 1);
             endDate = d.toISOString().split('T')[0];
           }
+          const isPast = isSeminarPast(item['Date Fin']);
           const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+          const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
+
           return {
             title: (isReserved ? "🔒 " : "") + (item['Intervenant (Sensei)'] ? item['Intervenant (Sensei)'] + ' - ' : '') + (item['Titre du séminaire'] || 'Stage'),
             start: item['Date Début'],
             end: endDate,
-            color: isReserved ? '#64748b' : '#2563eb',
+            backgroundColor: timeline.color,
+            borderColor: timeline.color,
+            textColor: timeline.textColor,
             extendedProps: { rawData: item }
           };
         });
@@ -734,24 +778,27 @@
       const bounds = [];
 
       items.forEach((item, index) => {
-        const rawLat = (item['Latitude'] || '').toString().replace(',', '.');
-        const rawLng = (item['Longitude'] || '').toString().replace(',', '.');
+        const rawLat = (item['Latitude'] || '').toString().trim().replace(',', '.');
+        const rawLng = (item['Longitude'] || '').toString().trim().replace(',', '.');
         const lat = parseFloat(rawLat);
         const lng = parseFloat(rawLng);
         const isPast = isSeminarPast(item['Date Fin']);
         const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+        const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
         const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
 
         const itemCardSidebar = createCardElement(item, index);
         const itemCardFull = createCardElement(item, index);
 
-        if (!isNaN(lat) && !isNaN(lng)) {
+        // Validation stricte des coordonnées GPS (évite tout crash de la carte)
+        const hasValidCoords = !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+
+        if (hasValidCoords) {
           bounds.push([lat, lng]);
-          const markerColor = isPast ? '#94a3b8' : (isReserved ? '#64748b' : '#2563eb');
 
           const markerIcon = L.divIcon({
             className: 'custom-pin',
-            html: `<div style="background-color:${markerColor}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
+            html: `<div style="background-color:${timeline.color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.35);"></div>`,
             iconSize: [16, 16],
             iconAnchor: [8, 8]
           });
