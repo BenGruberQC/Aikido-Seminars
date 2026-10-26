@@ -243,7 +243,7 @@
     .btn-card-action:hover { background: #e2e8f0; }
 
     /* Popups Leaflet */
-    .popup-content { font-family: inherit; font-size: 0.85rem; max-width: 260px; line-height: 1.4; }
+    .popup-content { font-family: inherit; font-size: 0.85rem; max-width: 270px; line-height: 1.4; }
 
     @media (max-width: 850px) {
       header { padding: 8px 12px; }
@@ -532,11 +532,7 @@
 
       if (currencySuffix) {
         if (fee.startsWith('$')) {
-          fee = fee.substring(1).trim() + ` $ ${currencySuffix}`;
-        } else if (fee.includes('$')) {
-          fee = fee.replace('$', '').trim() + ` $ ${currencySuffix}`;
-        } else {
-          fee = fee + ` $ ${currencySuffix}`;
+          fee = fee.substring(1).trim() + ` $ ${currencySuffix}`; } else if (fee.includes('$')) { fee = fee.replace('$', '').trim() + ` $ ${currencySuffix}`; } else { fee = fee + ` $ ${currencySuffix}`;
         }
       }
 
@@ -575,11 +571,7 @@
       }
       const loc = encodeURIComponent([item['Dojo Hôte'], item['Adresse Civique'], item['Ville']].filter(Boolean).join(', '));
       const details = encodeURIComponent((item['Lien Inscription / Web'] ? item['Lien Inscription / Web'] + "\n\n" : "") + (item['Notes / Remarques'] || ''));
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&location=${loc}&details=${details}`;
-    }
-
-    function copySeminarLink(id) {
-      const url = `${window.location.origin}${window.location.pathname}#${id}`;
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&location=${loc}&details=${details}`; }  function copySeminarLink(id) { const url = `${window.location.origin}${window.location.pathname}#${id}`;
       navigator.clipboard.writeText(url).then(() => {
         alert(currentLang === 'fr' ? "Lien copié dans le presse-papier !" : "Link copied to clipboard!");
       });
@@ -700,13 +692,7 @@
       const isPast = isSeminarPast(item['Date Fin']);
       const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
       const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
-      const idEvent = item['ID Événement'] || `seminar-${index}`;
-      const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
-      const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
-
-      const card = document.createElement('div');
-      card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`;
-      card.id = `card-${idEvent}`;
+      const idEvent = item['ID Événement'] || `seminar-${index}`; const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']); const isUniversal = (item['Public Cible'] \vert{}\vert{} '').toLowerCase().includes('tous') \vert{}\vert{} (item['Courant / Affiliation'] \vert{}\vert{} '').toLowerCase().includes('ouvert');  const card = document.createElement('div'); card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`; card.id = `card-${idEvent}`;
       card.style.borderLeftColor = timeline.color;
 
       const delayBadgeText = (timeline.key && t[timeline.key]) ? t[timeline.key] : null;
@@ -719,15 +705,14 @@
           ${isPast ? `<span class="badge badge-past">${t.badgePast}</span>` : ''}
         </div>
         <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
-        <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
-        <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}</div>
+        <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] \vert{}\vert{} 'Sensei'}</strong>${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
+        <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo}${item['Date Fin']}</div>
         <div class="card-meta">📍 ${item['Dojo Hôte']} (${[item['Ville'], item['Province / Région']].filter(Boolean).join(', ')})</div>
         ${!isReserved ? `<div class="card-price">💰 ${feeFormatted || t.feeTBD}</div>` : ''}
         
         <div class="card-actions">
           <button class="btn-card-action" onclick="copySeminarLink('${idEvent}')">${t.labelShare}</button>
-          <a class="btn-card-action" href="${formatGoogleCalendarUrl(item)}" target="_blank">${t.labelCalGoogle}</a>
-          ${item['Lien Inscription / Web'] ? `<a class="btn-card-action" href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent);">${t.labelLink}</a>` : ''}
+          <a class="btn-card-action" href="${formatGoogleCalendarUrl(item)}" target="_blank">${t.labelCalGoogle}</a>${item['Lien Inscription / Web'] ? `<a class="btn-card-action" href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent);">${t.labelLink}</a>` : ''}
         </div>
       `;
 
@@ -776,55 +761,101 @@
       }
 
       const bounds = [];
+      const dojosGroups = {};
 
+      // 1. Liste latérale, vue complète et groupement géographique par coordonnées
       items.forEach((item, index) => {
         const rawLat = (item['Latitude'] || '').toString().trim().replace(',', '.');
         const rawLng = (item['Longitude'] || '').toString().trim().replace(',', '.');
         const lat = parseFloat(rawLat);
         const lng = parseFloat(rawLng);
-        const isPast = isSeminarPast(item['Date Fin']);
-        const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
-        const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
-        const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
 
         const itemCardSidebar = createCardElement(item, index);
         const itemCardFull = createCardElement(item, index);
 
-        // Validation stricte des coordonnées GPS (évite tout crash de la carte)
+        sidebarContainer.appendChild(itemCardSidebar.card);
+        fullListContainer.appendChild(itemCardFull.card);
+
         const hasValidCoords = !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-
         if (hasValidCoords) {
-          bounds.push([lat, lng]);
+          const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+          if (!dojosGroups[key]) {
+            dojosGroups[key] = {
+              lat: lat,
+              lng: lng,
+              events: []
+            };
+          }
+          dojosGroups[key].events.push({
+            item: item,
+            cardSidebar: itemCardSidebar
+          });
+        }
+      });
 
-          const markerIcon = L.divIcon({
+      // 2. Affichage des marqueurs (repère simple ou pastille numérotée si doublons)
+      Object.values(dojosGroups).forEach(group => {
+        const lat = group.lat;
+        const lng = group.lng;
+        const count = group.events.length;
+        bounds.push([lat, lng]);
+
+        const firstEvent = group.events[0].item;
+        const isPast = isSeminarPast(firstEvent['Date Fin']);
+        const isReserved = (firstEvent['Statut'] || '').toLowerCase().includes('réserv');
+        const timeline = getStageTimelineInfo(firstEvent['Date Début'], isPast, isReserved);
+
+        let markerIcon;
+
+        if (count > 1) {
+          // Pastille avec compteur si le dojo a plusieurs stages
+          markerIcon = L.divIcon({
+            className: 'custom-pin-multi',
+            html: `<div style="background-color:${timeline.color}; color:#fff; width:24px; height:24px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; font-family:sans-serif;">${count}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+        } else {
+          // Marqueur circulaire standard
+          markerIcon = L.divIcon({
             className: 'custom-pin',
             html: `<div style="background-color:${timeline.color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.35);"></div>`,
             iconSize: [16, 16],
             iconAnchor: [8, 8]
           });
-
-          const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
-          markersMap[itemCardSidebar.idEvent] = { marker, lat, lng };
-
-          marker.bindPopup(`
-            <div class="popup-content">
-              <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
-              <em>${item['Intervenant (Sensei)'] || ''}</em><br>
-              📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}<br>
-              📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})<br>
-              ${isReserved ? `<strong>${t.badgeReserved}</strong>` : (feeFormatted ? `💰 ${feeFormatted}` : '')}
-            </div>
-          `);
-
-          itemCardSidebar.card.onclick = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
-            map.flyTo([lat, lng], 13);
-            marker.openPopup();
-          };
         }
 
-        sidebarContainer.appendChild(itemCardSidebar.card);
-        fullListContainer.appendChild(itemCardFull.card);
+        const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
+
+        let popupHtml = `<div class="popup-content" style="max-height: 250px; overflow-y: auto;">`;
+        if (count > 1) {
+          popupHtml += `<div style="font-weight:700; color:var(--accent); margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">📍 ${count} séminaires à ce dojo :</div>`;
+        }
+
+        group.events.forEach((ev, idx) => {
+          const item = ev.item;
+          const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
+          const itemReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+
+          popupHtml += `
+            <div style="${idx > 0 ? 'margin-top:8px; padding-top:8px; border-top:1px dashed #e2e8f0;' : ''}">
+              <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
+              <em>${item['Intervenant (Sensei)'] || ''}</em><br>
+              📅 ${item['Date Début']} ${t.labelTo}${item['Date Fin']}<br>
+              📍 ${item['Dojo Hôte']} (${item['Ville'] \vert{}\vert{} ''})<br>${itemReserved ? `<strong>${t.badgeReserved}</strong>` : (feeFormatted ? `💰 ${feeFormatted}` : '')}
+            </div>
+          `;
+
+          markersMap[ev.cardSidebar.idEvent] = { marker, lat, lng };
+          ev.cardSidebar.card.onclick = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+            map.flyTo([lat, lng], 14);
+            marker.openPopup();
+          };
+        });
+
+        popupHtml += `</div>`;
+        marker.bindPopup(popupHtml);
       });
 
       if (bounds.length > 0 && !window.location.hash) {
@@ -978,12 +1009,4 @@
       error: function() {
         dataLoaded = true;
         clearTimeout(loadTimeout);
-        const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
-        document.getElementById('sidebar-seminar-list').innerHTML = err;
-        document.getElementById('full-seminar-list').innerHTML = err;
-      }
-    });
-  </script>
-</body>
-</html>
-
+        const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6
