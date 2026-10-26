@@ -5,150 +5,189 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Séminaires d'Aïkido</title>
 
-  <!-- Feuille de style Leaflet -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <!-- Feuilles de style Leaflet MarkerCluster -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #333333;
+      background-color: #f8f9fa;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      min-height: 100vh;
     }
+
     header {
-      padding: 10px 20px;
       background-color: #1a1a1a;
       color: #ffffff;
+      padding: 12px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    header .author {
+      font-size: 0.85rem;
+      color: #cccccc;
+    }
+
+    /* Barre de filtres */
+    .filter-bar {
+      background-color: #ffffff;
+      padding: 10px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .filter-bar select, .filter-bar button {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid #cccccc;
+      background-color: #ffffff;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .btn-proposer {
+      background-color: #b71c1c !important;
+      color: #ffffff !important;
+      border: none !important;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* Disposition principale */
+    .main-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 105px);
+      position: relative;
+    }
+
+    .sidebar {
+      width: 380px;
+      background-color: #ffffff;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar h2 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .seminar-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 12px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .seminar-card h3 {
+      font-size: 0.95rem;
+      color: #b71c1c;
+      margin-bottom: 4px;
+    }
+
+    .seminar-card p {
+      font-size: 0.85rem;
+      margin: 2px 0;
+      color: #555555;
+    }
+
     #map {
       flex: 1;
-      width: 100%;
+      height: 100%;
     }
-    /* Style personnalisé des pastilles de regroupement */
-    .my-cluster {
-      background-color: rgba(220, 53, 69, 0.9);
+
+    /* Pastille personnalisée pour dojos avec plusieurs séminaires */
+    .badge-multi-stages {
+      background-color: #d32f2f;
+      color: #ffffff;
       border: 2px solid #ffffff;
       border-radius: 50%;
-      color: #ffffff;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: bold;
-      text-align: center;
-      line-height: 30px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <h1>Séminaires d'Aïkido</h1>
-    <div>Par <strong>BenGruberQC</strong></div>
-  </header>
-
-  <div id="map"></div>
-
-  <!-- Scripts Leaflet & MarkerCluster -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
-  <script>
-    // 1. Initialisation de la carte
-    const map = L.map('map').setView([45.5017, -73.5673], 4);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 2. Initialisation du groupe de grappes (Cluster)
-    // maxClusterRadius: distance de regroupement en pixels (faible pour ne fusionner que les stages proches ou identiques)
-    const markersGroup = L.markerClusterGroup({
-      showCoverageOnHover: false,
-      maxClusterRadius: 20, 
-      iconCreateFunction: function(cluster) {
-        const count = cluster.getChildCount();
-        return L.divIcon({
-          html: `<div><span>${count}</span></div>`,
-          className: 'my-cluster leaflet-marker-icon',
-          iconSize: L.point(32, 32)
-        });
-      }
-    });
-
-    // 3. Exemple de chargement des données (ou lecture de votre fichier TSV/JSON)
-    function chargerSeminaires(data) {
-      markersGroup.clearLayers();
-
-      data.forEach(item => {
-        if (item.latitude && item.longitude) {
-          const lat = parseFloat(item.latitude);
-          const lng = parseFloat(item.longitude);
-
-          if (!isNaN(lat) && !isNaN(lng)) {
-            const marker = L.marker([lat, lng]);
-
-            const popupContent = `
-              <div style="font-size: 13px;">
-                <strong style="font-size: 14px;">${item.titre}</strong><br>
-                <b>Intervenant(s) :</b> ${item.sensei || 'Non spécifié'}<br>
-                <b>Dates :</b> ${item.dateDebut} au ${item.dateFin}<br>
-                <b>Lieu :</b> ${item.dojoHote || ''}, ${item.ville || ''}<br>
-                ${item.web ? `<a href="${item.web}" target="_blank">Lien événement</a>` : ''}
-              </div>
-            `;
-
-            marker.bindPopup(popupContent);
-            markersGroup.addLayer(marker);
-          }
-        }
-      });
-
-      map.addLayer(markersGroup);
+      font-size: 13px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
     }
 
-    // Exemple de données de test correspondant à votre registre :
-    const demoData = [
-      {
-        titre: "March Break Seminar",
-        sensei: "George Hewson, Alex Loo, David Yates, John Foster",
-        dateDebut: "2027-03-13",
-        dateFin: "2027-03-13",
-        dojoHote: "Toronto Beaches Aikikai",
-        ville: "Toronto",
-        latitude: 43.6532,
-        longitude: -79.3832
-      },
-      {
-        titre: "Aikido & Iaido Seminar",
-        sensei: "Dale Nordenberg, Fiona Blyth",
-        dateDebut: "2026-10-30",
-        dateFin: "2026-11-01",
-        dojoHote: "Toronto Aikikai",
-        ville: "Toronto",
-        latitude: 43.6543,
-        longitude: -79.4526
-      },
-      {
-        titre: "Autre séminaire au même dojo",
-        sensei: "Sensei Exemple",
-        dateDebut: "2027-05-10",
-        dateFin: "2027-05-12",
-        dojoHote: "Toronto Beaches Aikikai",
-        ville: "Toronto",
-        latitude: 43.6532,
-        longitude: -79.3832
-      }
-    ];
+    /* Modal Proposer un stage */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
 
-    chargerSeminaires(demoData);
-  </script>
-</body>
-</html>
+    .modal-box {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    .modal-box h2 {
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+    }
+
+    .modal-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #dddddd;
+      border-radius: 6px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .modal-option:hover {
+      background-color: #f1f1f1;
+    }
+
+    .btn-close {
+      margin-top: 12px;
+      padding: 6px 16px;
+      background-color: #666666;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
