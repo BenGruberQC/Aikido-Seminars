@@ -281,4 +281,751 @@
         Sélectionnez le mode de transmission qui vous convient :
       </p>
 
-      <a class="option-card" href="https://forms.gle/Fv8C4q4dTvhDTQuF7" target="_blank" onclick="document.getElementById('
+      <a class="option-card" href="https://forms.gle/Fv8C4q4dTvhDTQuF7" target="_blank" onclick="document.getElementById('modal-proposer').style.display='none'">
+        <span style="font-size: 1.6rem;">📝</span>
+        <div>
+          <div id="txt-form-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Remplir le formulaire en ligne</div>
+          <div id="txt-form-sub" style="font-size: 0.75rem; color: var(--text-muted);">Idéal pour déclarer un stage ou réserver une date</div>
+        </div>
+      </a>
+
+      <a id="mail-link" class="option-card" href="mailto:bgruberca@gmail.com?subject=Nouveau%20s%C3%A9minaire%20A%C3%AFkido%20-%20Affiche&body=Bonjour,%0D%0A%0D%0AVeuillez%20trouver%20en%20pi%C3%A8ce%20jointe%20l'affiche%20du%20stage%20%C3%A0%20ajouter%20au%20registre.%0D%0A%0D%0AD%C3%A9tails%20compl%C3%A9mentaires%20:%0D%0A-%20Dojo%20h%C3%B4te%20:%0D%0A-%20Ville%20:%0D%0A-%20Dates%20:%0D%0A-%20Lien%20web%20/page%20:%20" onclick="document.getElementById('modal-proposer').style.display='none'">
+        <span style="font-size: 1.6rem;">✉️</span>
+        <div>
+          <div id="txt-mail-title" style="font-weight: 600; font-size: 0.9rem; color: var(--accent);">Envoyer l'affiche par courriel</div>
+          <div id="txt-mail-sub" style="font-size: 0.75rem; color: var(--text-muted);">Transmettre vos informations à bgruberca@gmail.com</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div id="filter-bar">
+    <label><strong id="txt-filter-label">Filtrer :</strong></label>
+    <select id="filter-month"><option value="ALL">Tous les mois</option></select>
+    <select id="filter-sensei"><option value="ALL">Tous les intervenants</option></select>
+    <select id="filter-city"><option value="ALL">Toutes régions / villes</option></select>
+
+    <!-- Géolocalisation -->
+    <button id="btn-near-me" class="btn-geo" onclick="toggleGeolocation()">
+      📍 <span id="txt-near-me">Autour de moi</span>
+    </button>
+    <select id="filter-radius" class="filter-control" style="display:none;" onchange="applyFilters()">
+      <option value="100">100 km</option>
+      <option value="250" selected>250 km</option>
+      <option value="500">500 km</option>
+    </select>
+
+    <!-- Archives -->
+    <label class="checkbox-label">
+      <input type="checkbox" id="check-archives" onchange="applyFilters()" />
+      <span id="txt-archives-label">Inclure les archives</span>
+    </label>
+
+    <div class="action-group">
+      <button id="btn-submit-action" class="btn-submit" onclick="document.getElementById('modal-proposer').style.display='flex'">
+        ➕ Proposer
+      </button>
+
+      <!-- Sélecteur à 3 boutons -->
+      <div class="view-toggles">
+        <button id="btn-map" class="toggle-btn active">🗺️ Carte</button>
+        <button id="btn-list" class="toggle-btn">📋 Liste</button>
+        <button id="btn-calendar" class="toggle-btn">📅 Calendrier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu -->
+  <div id="main-content">
+    
+    <!-- VUE CARTE -->
+    <div id="view-map-container">
+      <div id="map"></div>
+      <div id="desktop-sidebar">
+        <h2 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.5px;">Séminaires</h2>
+        <div id="sidebar-seminar-list">Chargement des données...</div>
+      </div>
+    </div>
+
+    <!-- VUE LISTE (100% de largeur) -->
+    <div id="view-list-container">
+      <div class="list-wrapper">
+        <h2 id="txt-full-list-title" style="font-size: 1.1rem; color: var(--primary); margin-bottom: 16px;">Séminaires au programme</h2>
+        <div id="full-seminar-list">Chargement des données...</div>
+      </div>
+    </div>
+
+    <!-- VUE CALENDRIER -->
+    <div id="view-calendar-container">
+      <div id="calendar"></div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVMwEz1lYueWe_Bkc8EPwVhoyhyIg3CxkFgsGZLSt9QoIBm5h2pZuU3s_GAgCBje0QUsriGq4B8mul/pub?gid=0&single=true&output=csv";
+
+    const US_STATES = new Set([
+      'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+      'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+      'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+      'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+      'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+    ]);
+
+    const CA_PROVINCES = new Set([
+      'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'
+    ]);
+
+    const i18n = {
+      fr: {
+        siteTitle: "Séminaires d'Aïkido",
+        creditDev: "Développé par",
+        filterLabel: "Filtrer :",
+        allMonths: "Tous les mois",
+        allSensei: "Tous les intervenants",
+        allCities: "Toutes régions / villes",
+        nearMe: "Autour de moi",
+        archivesLabel: "Inclure les archives",
+        btnSubmit: "➕ Proposer",
+        btnMap: "🗺️ Carte",
+        btnList: "📋 Liste",
+        btnCal: "📅 Calendrier",
+        fullListTitle: "Séminaires au programme",
+        noSeminar: "Aucun stage ne correspond aux critères sélectionnés.",
+        loading: "Chargement des séminaires...",
+        errorLoading: "⚠️ Impossible de charger les données du Google Sheet. Veuillez rafraîchir la page ou réessayer ultérieurement.",
+        modalTitle: "Proposer un séminaire",
+        modalDesc: "Sélectionnez le mode de transmission qui vous convient :",
+        formTitle: "Remplir le formulaire en ligne",
+        formSub: "Idéal pour déclarer un stage ou réserver une date",
+        mailTitle: "Envoyer l'affiche par courriel",
+        mailSub: "Transmettre vos informations à bgruberca@gmail.com",
+        labelTo: "au",
+        feeTBD: "Tarif à venir",
+        labelCalGoogle: "📅 Google Agenda",
+        labelShare: "🔗 Partager",
+        labelLink: "Page officielle →",
+        badgeReserved: "🔒 Date réservée",
+        badgeOpen: "Ouvert à tous styles",
+        badgePast: "Passé",
+        calLocale: "fr",
+        calToday: "Aujourd'hui",
+        calMonth: "Mois",
+        calList: "Agenda",
+        badgeThisMonth: "Ce mois-ci",
+        badge1to3: "1 à 3 mois",
+        badge4to6: "4 à 6 mois",
+        badge7plus: "7 mois +"
+      },
+      en: {
+        siteTitle: "Aikido Seminars",
+        creditDev: "Developed by",
+        filterLabel: "Filter:",
+        allMonths: "All months",
+        allSensei: "All instructors",
+        allCities: "All regions / cities",
+        nearMe: "Near me",
+        archivesLabel: "Include past events",
+        btnSubmit: "➕ Submit",
+        btnMap: "🗺️ Map",
+        btnList: "📋 List",
+        btnCal: "📅 Calendar",
+        fullListTitle: "Upcoming Seminars",
+        noSeminar: "No seminars match the selected criteria.",
+        loading: "Loading seminars...",
+        errorLoading: "⚠️ Unable to load Google Sheet data. Please refresh or try again later.",
+        modalTitle: "Submit a Seminar",
+        modalDesc: "Select your preferred transmission method:",
+        formTitle: "Fill out the online form",
+        formSub: "Ideal to submit an event or hold a date",
+        mailTitle: "Send the poster by email",
+        mailSub: "Send your flyer to bgruberca@gmail.com",
+        labelTo: "to",
+        feeTBD: "Fee TBD",
+        labelCalGoogle: "📅 Google Calendar",
+        labelShare: "🔗 Share",
+        labelLink: "Official Page →",
+        badgeReserved: "🔒 Date Reserved",
+        badgeOpen: "Open to all styles",
+        badgePast: "Past event",
+        calLocale: "en",
+        calToday: "Today",
+        calMonth: "Month",
+        calList: "List",
+        badgeThisMonth: "This month",
+        badge1to3: "1 to 3 months",
+        badge4to6: "4 to 6 months",
+        badge7plus: "7+ months"
+      }
+    };
+
+    let currentLang = 'fr';
+    let userLocation = null;
+    let allSeminars = [];
+    let markersMap = {};
+    let markersLayer = L.layerGroup();
+    let calendar = null;
+    let dataLoaded = false;
+
+    // Initialisation Carte Leaflet
+    const map = L.map('map').setView([45.5125, -73.5807], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    markersLayer.addTo(map);
+
+    // Fonction de calcul de la couleur selon l'échéance
+    function getStageTimelineInfo(startDateStr, isPast, isReserved) {
+      if (isPast) return { color: '#94a3b8', textColor: '#ffffff', key: 'badgePast' };
+      if (isReserved) return { color: '#64748b', textColor: '#ffffff', key: 'badgeReserved' };
+      if (!startDateStr) return { color: '#2563eb', textColor: '#ffffff', key: null };
+
+      const now = new Date();
+      const target = new Date(startDateStr);
+      if (isNaN(target.getTime())) return { color: '#2563eb', textColor: '#ffffff', key: null };
+
+      const monthDiff = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+
+      if (monthDiff <= 0) {
+        return { color: '#e53935', textColor: '#ffffff', key: 'badgeThisMonth' };
+      }
+      if (monthDiff >= 1 && monthDiff <= 3) {
+        return { color: '#fb8c00', textColor: '#ffffff', key: 'badge1to3' };
+      }
+      if (monthDiff >= 4 && monthDiff <= 6) {
+        return { color: '#eab308', textColor: '#000000', key: 'badge4to6' };
+      }
+      return { color: '#16a34a', textColor: '#ffffff', key: 'badge7plus' };
+    }
+
+    // Détection de devise selon la région et l'adresse civique
+    function formatFeeWithCurrency(feeString, provinceOrState, fullAddress) {
+      if (!feeString || feeString.trim() === '') return '';
+      let fee = feeString.trim();
+
+      if (fee.toUpperCase().includes('CAD') || fee.toUpperCase().includes('USD')) {
+        return fee;
+      }
+
+      const region = (provinceOrState || '').trim().toUpperCase();
+      const address = (fullAddress || '').trim().toUpperCase();
+
+      const isCanada = CA_PROVINCES.has(region) || 
+                       address.includes('CANADA') || 
+                       /\b[A-Z]\d[A-Z]\s?\d[A-Z]\d\b/.test(address);
+
+      const isUSA = US_STATES.has(region) || 
+                    address.includes('USA') || 
+                    address.includes('UNITED STATES') || 
+                    /\b\d{5}(-\d{4})?\b/.test(address);
+
+      let currencySuffix = '';
+      if (isCanada) {
+        currencySuffix = 'CAD';
+      } else if (isUSA) {
+        currencySuffix = 'USD';
+      }
+
+      if (currencySuffix) {
+        if (fee.startsWith('$')) {
+          fee = fee.substring(1).trim() + ` $ ${currencySuffix}`;
+        } else if (fee.includes('$')) {
+          fee = fee.replace('$', '').trim() + ` $ ${currencySuffix}`;
+        } else {
+          fee = fee + ` $ ${currencySuffix}`;
+        }
+      }
+
+      return fee;
+    }
+
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function isSeminarPast(dateFinStr) {
+      if (!dateFinStr) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const end = new Date(dateFinStr);
+      end.setHours(23, 59, 59, 999);
+      return end < today;
+    }
+
+    function formatGoogleCalendarUrl(item) {
+      const title = encodeURIComponent((item['Titre du séminaire'] || item['Intervenant (Sensei)'] || 'Stage Aïkido'));
+      const start = (item['Date Début'] || '').replace(/-/g, '');
+      let end = (item['Date Fin'] || item['Date Début'] || '').replace(/-/g, '');
+      if (end) {
+        const d = new Date(item['Date Fin'] || item['Date Début']);
+        d.setDate(d.getDate() + 1);
+        end = d.toISOString().split('T')[0].replace(/-/g, '');
+      }
+      const loc = encodeURIComponent([item['Dojo Hôte'], item['Adresse Civique'], item['Ville']].filter(Boolean).join(', '));
+      const details = encodeURIComponent((item['Lien Inscription / Web'] ? item['Lien Inscription / Web'] + "\n\n" : "") + (item['Notes / Remarques'] || ''));
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&location=${loc}&details=${details}`;
+    }
+
+    function copySeminarLink(id) {
+      const url = `${window.location.origin}${window.location.pathname}#${id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert(currentLang === 'fr' ? "Lien copié dans le presse-papier !" : "Link copied to clipboard!");
+      });
+    }
+
+    function toggleGeolocation() {
+      const btn = document.getElementById('btn-near-me');
+      const radiusSelect = document.getElementById('filter-radius');
+
+      if (userLocation) {
+        userLocation = null;
+        btn.classList.remove('active');
+        radiusSelect.style.display = 'none';
+        applyFilters();
+      } else {
+        if (!navigator.geolocation) {
+          alert(currentLang === 'fr' ? "Géolocalisation non supportée." : "Geolocation not supported.");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            btn.classList.add('active');
+            radiusSelect.style.display = 'inline-block';
+            applyFilters();
+          },
+          () => {
+            alert(currentLang === 'fr' ? "Impossible de récupérer votre position." : "Unable to retrieve your location.");
+          }
+        );
+      }
+    }
+
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: i18n[currentLang].calLocale,
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,listMonth'
+        },
+        buttonText: {
+          today: i18n[currentLang].calToday,
+          month: i18n[currentLang].calMonth,
+          list: i18n[currentLang].calList
+        },
+        eventClick: function(info) {
+          const item = info.event.extendedProps.rawData;
+          const t = i18n[currentLang];
+          alert(
+            (item['Titre du séminaire'] || item['Intervenant (Sensei)']) + "\n\n" +
+            "Sensei : " + (item['Intervenant (Sensei)'] || 'N/C') + "\n" +
+            "Dates : " + item['Date Début'] + " " + t.labelTo + " " + item['Date Fin'] + "\n" +
+            "Lieu : " + item['Dojo Hôte'] + " (" + item['Ville'] + ")"
+          );
+        }
+      });
+      calendar.render();
+    }
+
+    function populateDropdowns(items) {
+      const monthSelect = document.getElementById('filter-month');
+      const senseiSelect = document.getElementById('filter-sensei');
+      const citySelect = document.getElementById('filter-city');
+
+      const savedMonth = monthSelect.value;
+      const savedSensei = senseiSelect.value;
+      const savedCity = citySelect.value;
+
+      const months = new Set();
+      const senseis = new Set();
+      const cities = new Set();
+
+      items.forEach(item => {
+        if (item['Date Début'] && item['Date Début'].length >= 7) months.add(item['Date Début'].substring(0, 7));
+        if (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].trim() !== '') {
+          item['Intervenant (Sensei)'].split(',').forEach(s => senseis.add(s.trim()));
+        }
+        const lieu = [item['Ville'], item['Province / Région']].filter(Boolean).join(', ');
+        if (lieu) cities.add(lieu);
+      });
+
+      const t = i18n[currentLang];
+      monthSelect.innerHTML = `<option value="ALL">${t.allMonths}</option>`;
+      Array.from(months).sort().forEach(ym => {
+        const opt = document.createElement('option');
+        opt.value = ym;
+        const d = new Date(ym + "-01T12:00:00");
+        opt.textContent = d.toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' });
+        monthSelect.appendChild(opt);
+      });
+
+      senseiSelect.innerHTML = `<option value="ALL">${t.allSensei}</option>`;
+      Array.from(senseis).sort((a,b) => a.localeCompare(b, currentLang)).forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        senseiSelect.appendChild(opt);
+      });
+
+      citySelect.innerHTML = `<option value="ALL">${t.allCities}</option>`;
+      Array.from(cities).sort((a,b) => a.localeCompare(b, currentLang)).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        citySelect.appendChild(opt);
+      });
+
+      if (Array.from(monthSelect.options).some(o => o.value === savedMonth)) monthSelect.value = savedMonth;
+      if (Array.from(senseiSelect.options).some(o => o.value === savedSensei)) senseiSelect.value = savedSensei;
+      if (Array.from(citySelect.options).some(o => o.value === savedCity)) citySelect.value = savedCity;
+    }
+
+    function createCardElement(item, index) {
+      const t = i18n[currentLang];
+      const isPast = isSeminarPast(item['Date Fin']);
+      const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+      const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
+      const idEvent = item['ID Événement'] || `seminar-${index}`;
+      const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
+      const isUniversal = (item['Public Cible'] || '').toLowerCase().includes('tous') || (item['Courant / Affiliation'] || '').toLowerCase().includes('ouvert');
+
+      const card = document.createElement('div');
+      card.className = `card ${isReserved ? 'reserved-card' : ''} ${isPast ? 'past-card' : ''}`;
+      card.id = `card-${idEvent}`;
+      card.style.borderLeftColor = timeline.color;
+
+      const delayBadgeText = (timeline.key && t[timeline.key]) ? t[timeline.key] : null;
+
+      card.innerHTML = `
+        <div class="badge-container">
+          <span class="badge ${isReserved ? 'badge-reserved' : ''}">${isReserved ? t.badgeReserved : (item['Courant / Affiliation'] || 'Aïkido')}</span>
+          ${delayBadgeText && !isPast && !isReserved ? `<span class="badge badge-delay" style="background:${timeline.color}; color:${timeline.textColor};">${delayBadgeText}</span>` : ''}
+          ${isUniversal ? `<span class="badge badge-open">${t.badgeOpen}</span>` : ''}
+          ${isPast ? `<span class="badge badge-past">${t.badgePast}</span>` : ''}
+        </div>
+        <h3>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</h3>
+        <div class="card-meta">👤 <strong>${item['Intervenant (Sensei)'] || 'Sensei'}</strong> ${item['Titre / Grade'] ? `(${item['Titre / Grade']})` : ''}</div>
+        <div class="card-meta">📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}</div>
+        <div class="card-meta">📍 ${item['Dojo Hôte']} (${[item['Ville'], item['Province / Région']].filter(Boolean).join(', ')})</div>
+        ${!isReserved ? `<div class="card-price">💰 ${feeFormatted || t.feeTBD}</div>` : ''}
+        
+        <div class="card-actions">
+          <button class="btn-card-action" onclick="copySeminarLink('${idEvent}')">${t.labelShare}</button>
+          <a class="btn-card-action" href="${formatGoogleCalendarUrl(item)}" target="_blank">${t.labelCalGoogle}</a>
+          ${item['Lien Inscription / Web'] ? `<a class="btn-card-action" href="${item['Lien Inscription / Web']}" target="_blank" style="color:var(--accent);">${t.labelLink}</a>` : ''}
+        </div>
+      `;
+
+      return { card, idEvent };
+    }
+
+    function renderView(items) {
+      markersLayer.clearLayers();
+      markersMap = {};
+      const sidebarContainer = document.getElementById('sidebar-seminar-list');
+      const fullListContainer = document.getElementById('full-seminar-list');
+      sidebarContainer.innerHTML = '';
+      fullListContainer.innerHTML = '';
+      const t = i18n[currentLang];
+
+      if (calendar) {
+        calendar.removeAllEvents();
+        const events = items.map(item => {
+          let endDate = item['Date Fin'];
+          if (endDate) {
+            let d = new Date(endDate);
+            d.setDate(d.getDate() + 1);
+            endDate = d.toISOString().split('T')[0];
+          }
+          const isPast = isSeminarPast(item['Date Fin']);
+          const isReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+          const timeline = getStageTimelineInfo(item['Date Début'], isPast, isReserved);
+
+          return {
+            title: (isReserved ? "🔒 " : "") + (item['Intervenant (Sensei)'] ? item['Intervenant (Sensei)'] + ' - ' : '') + (item['Titre du séminaire'] || 'Stage'),
+            start: item['Date Début'],
+            end: endDate,
+            backgroundColor: timeline.color,
+            borderColor: timeline.color,
+            textColor: timeline.textColor,
+            extendedProps: { rawData: item }
+          };
+        });
+        calendar.addEventSource(events);
+      }
+
+      if (items.length === 0) {
+        sidebarContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">${t.noSeminar}</p>`;
+        fullListContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">${t.noSeminar}</p>`;
+        return;
+      }
+
+      const bounds = [];
+      const dojosGroups = {};
+
+      items.forEach((item, index) => {
+        const rawLat = (item['Latitude'] || '').toString().trim().replace(',', '.');
+        const rawLng = (item['Longitude'] || '').toString().trim().replace(',', '.');
+        const lat = parseFloat(rawLat);
+        const lng = parseFloat(rawLng);
+
+        const itemCardSidebar = createCardElement(item, index);
+        const itemCardFull = createCardElement(item, index);
+
+        sidebarContainer.appendChild(itemCardSidebar.card);
+        fullListContainer.appendChild(itemCardFull.card);
+
+        const hasValidCoords = !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+        if (hasValidCoords) {
+          const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+          if (!dojosGroups[key]) {
+            dojosGroups[key] = {
+              lat: lat,
+              lng: lng,
+              events: []
+            };
+          }
+          dojosGroups[key].events.push({
+            item: item,
+            cardSidebar: itemCardSidebar
+          });
+        }
+      });
+
+      Object.values(dojosGroups).forEach(group => {
+        const lat = group.lat;
+        const lng = group.lng;
+        const count = group.events.length;
+        bounds.push([lat, lng]);
+
+        const firstEvent = group.events[0].item;
+        const isPast = isSeminarPast(firstEvent['Date Fin']);
+        const isReserved = (firstEvent['Statut'] || '').toLowerCase().includes('réserv');
+        const timeline = getStageTimelineInfo(firstEvent['Date Début'], isPast, isReserved);
+
+        let markerIcon;
+
+        if (count > 1) {
+          markerIcon = L.divIcon({
+            className: 'custom-pin-multi',
+            html: `<div style="background-color:${timeline.color}; color:#fff; width:24px; height:24px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; font-family:sans-serif;">${count}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+        } else {
+          markerIcon = L.divIcon({
+            className: 'custom-pin',
+            html: `<div style="background-color:${timeline.color}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,0.35);"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+        }
+
+        const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
+
+        let popupHtml = `<div class="popup-content" style="max-height: 250px; overflow-y: auto;">`;
+        if (count > 1) {
+          popupHtml += `<div style="font-weight:700; color:var(--accent); margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">📍 ${count} séminaires à ce dojo :</div>`;
+        }
+
+        group.events.forEach((ev, idx) => {
+          const item = ev.item;
+          const feeFormatted = formatFeeWithCurrency(item['Tarif Complet'], item['Province / Région'], item['Adresse Civique']);
+          const itemReserved = (item['Statut'] || '').toLowerCase().includes('réserv');
+
+          popupHtml += `
+            <div style="${idx > 0 ? 'margin-top:8px; padding-top:8px; border-top:1px dashed #e2e8f0;' : ''}">
+              <strong>${item['Titre du séminaire'] || item['Intervenant (Sensei)']}</strong><br>
+              <em>${item['Intervenant (Sensei)'] || ''}</em><br>
+              📅 ${item['Date Début']} ${t.labelTo} ${item['Date Fin']}<br>
+              📍 ${item['Dojo Hôte']} (${item['Ville'] || ''})<br>
+              ${itemReserved ? `<strong>${t.badgeReserved}</strong>` : (feeFormatted ? `💰 ${feeFormatted}` : '')}
+            </div>
+          `;
+
+          markersMap[ev.cardSidebar.idEvent] = { marker, lat, lng };
+          ev.cardSidebar.card.onclick = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+            map.flyTo([lat, lng], 14);
+            marker.openPopup();
+          };
+        });
+
+        popupHtml += `</div>`;
+        marker.bindPopup(popupHtml);
+      });
+
+      if (bounds.length > 0 && !window.location.hash) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+
+      if (window.location.hash) {
+        const hashId = window.location.hash.substring(1);
+        if (markersMap[hashId]) {
+          map.flyTo([markersMap[hashId].lat, markersMap[hashId].lng], 14);
+          markersMap[hashId].marker.openPopup();
+        }
+      }
+    }
+
+    function applyFilters() {
+      const month = document.getElementById('filter-month').value;
+      const sensei = document.getElementById('filter-sensei').value;
+      const city = document.getElementById('filter-city').value;
+      const includeArchives = document.getElementById('check-archives').checked;
+      const radiusKm = parseFloat(document.getElementById('filter-radius').value);
+
+      const filtered = allSeminars.filter(item => {
+        const status = (item['Statut'] || '').trim().toLowerCase();
+        const isVisible = status === 'publié' || status.includes('réserv');
+        if (!isVisible) return false;
+
+        const isPast = isSeminarPast(item['Date Fin']);
+        if (!includeArchives && isPast) return false;
+
+        const ym = (item['Date Début'] || '').substring(0, 7);
+        const matchMonth = month === 'ALL' || ym === month;
+        const matchSensei = sensei === 'ALL' || (item['Intervenant (Sensei)'] && item['Intervenant (Sensei)'].includes(sensei));
+        const lieu = [item['Ville'], item['Province / Région']].filter(Boolean).join(', ');
+        const matchCity = city === 'ALL' || lieu === city;
+
+        let matchGeo = true;
+        if (userLocation) {
+          const lat = parseFloat((item['Latitude'] || '').toString().replace(',', '.'));
+          const lng = parseFloat((item['Longitude'] || '').toString().replace(',', '.'));
+          if (!isNaN(lat) && !isNaN(lng)) {
+            const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, lat, lng);
+            matchGeo = dist <= radiusKm;
+          } else {
+            matchGeo = false;
+          }
+        }
+
+        return matchMonth && matchSensei && matchCity && matchGeo;
+      });
+
+      filtered.sort((a, b) => (a['Date Début'] || '').localeCompare(b['Date Début'] || ''));
+      renderView(filtered);
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'fr' ? 'en' : 'fr';
+      const t = i18n[currentLang];
+
+      document.getElementById('lang-btn').textContent = currentLang === 'fr' ? 'EN' : 'FR';
+      document.getElementById('txt-site-title').textContent = t.siteTitle;
+      document.getElementById('txt-credit-dev').textContent = t.creditDev;
+      document.getElementById('txt-filter-label').textContent = t.filterLabel;
+      document.getElementById('txt-near-me').textContent = t.nearMe;
+      document.getElementById('txt-archives-label').textContent = t.archivesLabel;
+      document.getElementById('btn-submit-action').textContent = t.btnSubmit;
+      document.getElementById('btn-map').textContent = t.btnMap;
+      document.getElementById('btn-list').textContent = t.btnList;
+      document.getElementById('btn-calendar').textContent = t.btnCal;
+      document.getElementById('txt-full-list-title').textContent = t.fullListTitle;
+
+      document.getElementById('txt-modal-title').textContent = t.modalTitle;
+      document.getElementById('txt-modal-desc').textContent = t.modalDesc;
+      document.getElementById('txt-form-title').textContent = t.formTitle;
+      document.getElementById('txt-form-sub').textContent = t.formSub;
+      document.getElementById('txt-mail-title').textContent = t.mailTitle;
+      document.getElementById('txt-mail-sub').textContent = t.mailSub;
+
+      if (calendar) {
+        calendar.setOption('locale', t.calLocale);
+        calendar.setOption('buttonText', { today: t.calToday, month: t.calMonth, list: t.calList });
+      }
+
+      const activeSeminars = allSeminars.filter(item => {
+        const s = (item['Statut'] || '').trim().toLowerCase();
+        return s === 'publié' || s.includes('réserv');
+      });
+      populateDropdowns(activeSeminars);
+      applyFilters();
+    }
+
+    const btnMap = document.getElementById('btn-map');
+    const btnList = document.getElementById('btn-list');
+    const btnCalendar = document.getElementById('btn-calendar');
+
+    const viewMap = document.getElementById('view-map-container');
+    const viewList = document.getElementById('view-list-container');
+    const viewCal = document.getElementById('view-calendar-container');
+
+    function setActiveView(activeBtn, showContainer) {
+      [btnMap, btnList, btnCalendar].forEach(b => b.classList.remove('active'));
+      [viewMap, viewList, viewCal].forEach(v => v.style.display = 'none');
+
+      activeBtn.classList.add('active');
+      showContainer.style.display = (showContainer === viewMap) ? 'flex' : 'block';
+    }
+
+    btnMap.addEventListener('click', () => {
+      setActiveView(btnMap, viewMap);
+      map.invalidateSize();
+    });
+
+    btnList.addEventListener('click', () => {
+      setActiveView(btnList, viewList);
+    });
+
+    btnCalendar.addEventListener('click', () => {
+      setActiveView(btnCalendar, viewCal);
+      if (!calendar) initCalendar();
+      calendar.updateSize();
+      applyFilters();
+    });
+
+    document.getElementById('filter-month').addEventListener('change', applyFilters);
+    document.getElementById('filter-sensei').addEventListener('change', applyFilters);
+    document.getElementById('filter-city').addEventListener('change', applyFilters);
+
+    const loadTimeout = setTimeout(() => {
+      if (!dataLoaded) {
+        const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+        document.getElementById('sidebar-seminar-list').innerHTML = err;
+        document.getElementById('full-seminar-list').innerHTML = err;
+      }
+    }, 5000);
+
+    Papa.parse(GOOGLE_SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        dataLoaded = true;
+        clearTimeout(loadTimeout);
+        allSeminars = results.data;
+        const activeSeminars = allSeminars.filter(item => {
+          const s = (item['Statut'] || '').trim().toLowerCase();
+          return s === 'publié' || s.includes('réserv');
+        });
+        populateDropdowns(activeSeminars);
+        applyFilters();
+      },
+      error: function() {
+        dataLoaded = true;
+        clearTimeout(loadTimeout);
+        const err = `<p style="color:#b91c1c; font-size:0.85rem; padding:10px; background:#fef2f2; border-radius:6px;">${i18n[currentLang].errorLoading}</p>`;
+        document.getElementById('sidebar-seminar-list').innerHTML = err;
+        document.getElementById('full-seminar-list').innerHTML = err;
+      }
+    });
+  </script>
+</body>
+</html>
